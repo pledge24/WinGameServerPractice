@@ -49,7 +49,7 @@ int main()
     // 소켓 리소스 반환
     ::closesocket(clientSocket);
 
-    WSACleanup();                           // winsock을 종료한다. (안해도 문제가 생기진 않음)
+    WSACleanup();                           // winsock을 종료한다. (안해도 문제가 생기진 않음) 
 }
 
 
