@@ -1,6 +1,7 @@
 #include "pch.h"
 #include <iostream>
 
+// Winsock 통신을 위한 헤더들
 #include <WinSock2.h>
 #include <mswsock.h>
 #include <WS2tcpip.h>
@@ -22,7 +23,7 @@ int main()
         return 0;
     }
 
-    // SOCKADDR_IN: AF_INET(IPv4) 버전의 전송 주소 및 포트를 지정
+    // SOCKADDR_IN: AF_INET(IPv4) 버전의 주소 및 포트가 설정된 구조체이다.
     SOCKADDR_IN serverAddr; 
     ::memset(&serverAddr, 0, sizeof(serverAddr));
     serverAddr.sin_family = AF_INET;                            // IPv4
@@ -30,7 +31,7 @@ int main()
     ::inet_pton(AF_INET, "127.0.0.1", &serverAddr.sin_addr);    // localhost(사람이 읽을 수 있는 텍스트 표현의 IP주소를 이진 표현으로 변환해주는 함수)
     serverAddr.sin_port = htons(7777);                          // port : 7777
 
-    // Connect(): 연결 요청
+    // connect(): 해당 소켓으로 서버 주소에 연결을 요청한다.
     if (::connect(clientSocket, (SOCKADDR*)&serverAddr, sizeof(serverAddr)) == SOCKET_ERROR)
     {
         int32 errCode = ::WSAGetLastError();
