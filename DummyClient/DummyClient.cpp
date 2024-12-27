@@ -12,7 +12,6 @@ void HandleError(const char* cause)
     cout << cause << " ErrorCode : " << errCode << '\n';
 }
 
-
 int main()
 { 
     WSAData wsaData;                                    
@@ -32,14 +31,17 @@ int main()
     ::inet_pton(AF_INET, "127.0.0.1", &serverAddr.sin_addr);    // localhost(사람이 읽을 수 있는 텍스트 표현의 IP주소를 이진 표현으로 변환해주는 함수)
     serverAddr.sin_port = ::htons(7777);                        // port : 7777
 
+    // Connected UDP 다른점 1. connect 추가
+    ::connect(clientSocket, (SOCKADDR*)&serverAddr, sizeof(serverAddr));
+
     while (true)
     {
         // 데이터 송신
         char sendBuffer[100] = "Hello World!";
 
-        int32 resultCode = ::sendto(clientSocket, sendBuffer, sizeof(sendBuffer), 0,
-            (SOCKADDR*)&serverAddr, sizeof(serverAddr));
-
+        // Connected UDP 다른점 2. sendto() -> send()
+        int32 resultCode = ::send(clientSocket, sendBuffer, sizeof(sendBuffer), 0);
+        
         if (resultCode == SOCKET_ERROR)
         {
             HandleError("sendto");
@@ -56,8 +58,7 @@ int main()
         ::memset(&recvAddr, 0, sizeof(recvAddr));
         int32 addrLen = sizeof(recvAddr);
 
-        int32 recvLen = ::recvfrom(clientSocket, recvBuffer, sizeof(recvBuffer), 0,
-            (SOCKADDR*)&recvAddr, &addrLen);
+        int32 recvLen = ::recv(clientSocket, recvBuffer, sizeof(recvBuffer), 0);
 
         if (recvLen <= 0)
         {
