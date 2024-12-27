@@ -15,70 +15,74 @@ void HandleError(const char* cause)
 
 int main()
 {
-    // Winsock 초기화
-    WSAData wsaData;                                    
-    if (::WSAStartup(MAKEWORD(2, 2), &wsaData) != 0)    
+    WSAData wsaData;
+    if (::WSAStartup(MAKEWORD(2, 2), &wsaData) != 0)
         return 0;
 
-    // 소켓 생성
-    SOCKET serverSocket = ::socket(AF_INET, SOCK_DGRAM, 0);
-    if (serverSocket == SOCKET_ERROR)
+    SOCKET serverSocket = ::socket(AF_INET, SOCK_STREAM, 0);
+    if (serverSocket == INVALID_SOCKET)
     {
         HandleError("Socket");
         return 0;
     }
 
-    // 서버 주소 생성
-    SOCKADDR_IN serverAddr;
-    ::memset(&serverAddr, 0, sizeof(serverAddr));
-    serverAddr.sin_family = AF_INET;
-    serverAddr.sin_addr.s_addr = ::htonl(INADDR_ANY);
-    serverAddr.sin_port = ::htons(7777);
+    // 옵션을 해석하고 처리할 주체?
+    // 소켓 코드 -> SOL_SOCKET
+    // IPv4 -> IPPROTO_IP
+    // TCP 프로토콜 -> IPPROTO_TCP
 
-    // 소켓과 서버 주소 엮기(바인딩)
-    if (::bind(serverSocket, (SOCKADDR*)&serverAddr, sizeof(serverAddr)) == SOCKET_ERROR)
+    // ::getsockopt();
+    // 
+    // SO_KEEPALIVE = 주기적을 연결 상태 확인 여부 (TCP Only)
+    // 상대방이 소리소문없이 연결을 끊는다면?
+    // 주기적으로 TCP 프로토콜 연결 상태 확인 -> 끊어진 연결 감지
+    bool enable = true;
+    ::setsockopt(serverSocket, SOL_SOCKET, SO_KEEPALIVE, (char*)&enable, sizeof(enable));
+
+    // SO_LINGER = 지연하다
+    // 송신 버퍼에 있는 데이터를 보낼 것인가? 날릴 것인가?
+    // onoff = 0 이면 closesocket()이 바로 리턴, 아니면 linger초만큼 대기(default 0)
+    //LINGER linger;
+    //linger.l_onoff = 1;     // on / off
+    //linger.l_linger = 5;    // 대기 시간
+    //::setsockopt(serverSocket, SOL_SOCKET, SO_LINGER, (char*)&linger, sizeof(linger));
+    
+    // Half-Close
+    // SD_SEND : send 막는다.
+    // SD_RECEIVE : recv 막는다.
+    // SD_BOTH : 둘 다 막는다.
+    //::shutdown(serverSocket, SD_SEND);
+
+    //int32 sendBufferSize;
+    //int32 optionLen = sizeof(sendBufferSize);
+    //::getsockopt(serverSocket, SOL_SOCKET, SO_SNDBUF, (char*)&sendBufferSize, &optionLen);
+    //cout << "송신 버퍼 크기 : " << sendBufferSize << '\n';
+    //
+    //int32 recvBufferSize;
+    //optionLen = sizeof(recvBufferSize);
+    //::getsockopt(serverSocket, SOL_SOCKET, SO_SNDBUF, (char*)&recvBufferSize, &optionLen);
+    //cout << "수신 버퍼 크기 : " << recvBufferSize << '\n';
+
+    // SO_REUSERADDR
+    // IP 주소 및 port 재사용
     {
-        HandleError("Bind");
-        return 0;
+        bool enable = true;
+        ::setsockopt(serverSocket, SOL_SOCKET, SO_REUSEADDR, (char*)&enable, sizeof(enable));
     }
 
-    while (true)
+    // IPPROTO_TCP
+    // TCP_NODELAY = Nagle 네이글 알고리즘 작동 여부
+    // 데이터가 충분히 크면 보내고, 그렇지 않으면 데이터가 충분히 쌓일 때까지 대기!
+    // 장점 : 작은 패킷이 불필요하게 많이 생성되는 일을 방지
+    // 단점 : 반응 시간 손해
     {
-        SOCKADDR_IN clientAddr;
-        ::memset(&clientAddr, 0, sizeof(clientAddr));
-        int32 addrLen = sizeof(clientAddr);
-
-        char recvBuffer[1000];
-
-        // 데이터 수신
-        int32 recvLen = ::recvfrom(serverSocket, recvBuffer, sizeof(recvBuffer), 0,
-            (SOCKADDR*)&clientAddr, &addrLen);
-
-        if (recvLen <= 0)
-        {
-            HandleError("RecvFrom");
-            return 0;
-        }
-
-        cout << "Recv Data! Data = " << recvBuffer << '\n';
-        cout << "Recv Data! Len = " << recvLen << '\n';
-
-        // 데이터 송신
-        int32 resultCode = ::sendto(serverSocket, recvBuffer, recvLen, 0,
-            (SOCKADDR*)&clientAddr, sizeof(clientAddr));
-
-        // 원래는 소켓이 에러났다고 이렇게 프로그램을 강제로 끄는 일은 있으면 안된다.
-        if (resultCode == SOCKET_ERROR)
-        {
-            HandleError("sendto");
-            return 0;
-        }
-
-        cout << "Send Data! Data = " << recvBuffer << '\n';
-        cout << "Send Data! Len = " << recvLen << '\n';
+        bool enable = true;
+        ::setsockopt(serverSocket, IPPROTO_TCP, TCP_NODELAY, (char*)&enable, sizeof(enable));
     }
 
-    WSACleanup();                           
+    ::closesocket(serverSocket);
+
+    WSACleanup();
 }
 
 
