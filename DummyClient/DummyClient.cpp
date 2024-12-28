@@ -55,21 +55,27 @@ int main()
     {
         char sendBuffer[100] = "Hello World";
 
-        // Send
+        // Echoing
         while (true)
         {
-            if (::send(clientSocket, sendBuffer, sizeof(sendBuffer), 0) == SOCKET_ERROR)
+            // Send
+            while (true)
             {
-                // 원래 블록했어야 했는데... 너가 논블로킹으로 하라며?
-                if (::WSAGetLastError() == WSAEWOULDBLOCK)
-                    continue;
+                if (::send(clientSocket, sendBuffer, sizeof(sendBuffer), 0) == SOCKET_ERROR)
+                {
+                    // 원래 블록했어야 했는데... 너가 논블로킹으로 하라며?
+                    if (::WSAGetLastError() == WSAEWOULDBLOCK)
+                        continue;
 
-                // Error
+                    // Error!
+                    // 에러 처리 코드...
+                    break;
+                }
+
+                cout << "Send Data! Len= " << sizeof(sendBuffer) << '\n';
                 break;
             }
-
-            cout << "Send Data! Len= " << sizeof(sendBuffer) << '\n';
-
+            
             // Recv
             while (true)
             {
@@ -82,6 +88,7 @@ int main()
                         continue;
 
                     // Error
+                    // 에러 처리 코드...
                     break;
                 }
                 else if (recvLen == 0)

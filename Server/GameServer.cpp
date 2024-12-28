@@ -46,41 +46,60 @@ int main()
     SOCKADDR_IN clientAddr;
     int32 addrLen = sizeof(clientAddr);
 
-    // Accept
+    // Server open!
     while (true)
     {
-        SOCKET clientSocket = ::accept(listenSocket, (SOCKADDR*)&clientAddr, &addrLen);
-        if (clientSocket == INVALID_SOCKET)
-        {
-            // 원래 블록했어야 했는데... 너가 논블로킹으로 하라며?
-            if (::WSAGetLastError() == WSAEWOULDBLOCK)
-                continue;
-        }
-    
-        cout << "Client Connected!" << '\n';
+        SOCKET clientSocket;
 
-        // 데이터 송수신 시작!
+        // Accept
         while (true)
         {
-            char recvBuffer[1000];
-            int32 recvLen = ::recv(clientSocket, recvBuffer, sizeof(recvBuffer), 0);
-            if (recvLen == SOCKET_ERROR)
+            clientSocket = ::accept(listenSocket, (SOCKADDR*)&clientAddr, &addrLen);
+            if (clientSocket == INVALID_SOCKET)
             {
                 // 원래 블록했어야 했는데... 너가 논블로킹으로 하라며?
                 if (::WSAGetLastError() == WSAEWOULDBLOCK)
                     continue;
 
                 // Error
+                // 에러 처리 코드...
                 break;
             }
-            else if (recvLen == 0)
+
+            cout << "Client Connected!" << '\n';
+            break;
+        }
+
+        // Echoing
+        while (true)
+        {
+            char recvBuffer[1000];
+            int32 recvLen;
+
+            // Recv
+            while (true)
             {
-                // 연결 끊김
+                recvLen = ::recv(clientSocket, recvBuffer, sizeof(recvBuffer), 0);
+                if (recvLen == SOCKET_ERROR)
+                {
+                    // 원래 블록했어야 했는데... 너가 논블로킹으로 하라며?
+                    if (::WSAGetLastError() == WSAEWOULDBLOCK)
+                        continue;
+
+                    // Error
+                    // 에러 처리 코드...
+                    break;
+                }
+                else if (recvLen == 0)
+                {
+                    // 연결 끊김
+                    break;
+                }
+
+                cout << "Recv Data Len = " << recvLen << '\n';
                 break;
             }
-
-            cout << "Recv Data Len = " << recvLen << '\n';
-
+            
             // Send
             while (true)
             {
@@ -91,6 +110,7 @@ int main()
                         continue;
 
                     // Error
+                    // 에러 처리 코드...
                     break;
                 }
 
