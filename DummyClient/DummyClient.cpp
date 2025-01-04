@@ -53,58 +53,39 @@ int main()
 
     cout << "Connected to Server!" << '\n';
 
+    char sendBuffer[100] = "Hello World";
+    WSAEVENT wsaEvent = ::WSACreateEvent();
+    WSAOVERLAPPED overlapped = {};
+    overlapped.hEvent = wsaEvent;
+
+    // Send
     while (true)
     {
-        char sendBuffer[100] = "Hello World";
+        WSABUF wsaBuf;
+        wsaBuf.buf = sendBuffer;
+        wsaBuf.len = 100;
 
-        // Echoing
-        while (true)
+        DWORD sendLen = 0;
+        DWORD flags = 0;
+
+        if (::WSASend(clientSocket, &wsaBuf, 1, &sendLen, flags, &overlapped, nullptr) == SOCKET_ERROR)
         {
-            // Send
-            while (true)
+            if (::WSAGetLastError() == WSA_IO_PENDING)
             {
-                if (::send(clientSocket, sendBuffer, sizeof(sendBuffer), 0) == SOCKET_ERROR)
-                {
-                    // 원래 블록했어야 했는데... 너가 논블로킹으로 하라며?
-                    if (::WSAGetLastError() == WSAEWOULDBLOCK)
-                        continue;
-
-                    // Error!
-                    // 에러 처리 코드...
-                    break;
-                }
-
-                cout << "Send Data! Len= " << sizeof(sendBuffer) << '\n';
+                // Pending 
+                ::WSAWaitForMultipleEvents(1, &wsaEvent, TRUE, WSA_INFINITE, FALSE);
+                ::WSAGetOverlappedResult(clientSocket, &overlapped, &sendLen, FALSE, &flags);
+            }
+            else
+            {
+                // 진짜 문제 있는 상황
                 break;
             }
-
-            // Recv
-            while (true)
-            {
-                char recvBuffer[1000];
-                int32 recvLen = ::recv(clientSocket, recvBuffer, sizeof(recvBuffer), 0);
-                if (recvLen == SOCKET_ERROR)
-                {
-                    // 원래 블록했어야 했는데... 너가 논블로킹으로 하라며?
-                    if (::WSAGetLastError() == WSAEWOULDBLOCK)
-                        continue;
-
-                    // Error
-                    // 에러 처리 코드...
-                    break;
-                }
-                else if (recvLen == 0)
-                {
-                    // 연결 끊김
-                    break;
-                }
-
-                cout << "Recv Data! Len= " << recvLen << '\n';
-                break;
-            }
-
-            this_thread::sleep_for(1s);
         }
+
+        cout << "Send Data! Len= " << sizeof(sendBuffer) << '\n';
+     
+        this_thread::sleep_for(1s);
     }
 
     // 소켓 리소스 반환
