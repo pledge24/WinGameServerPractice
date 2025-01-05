@@ -1,21 +1,19 @@
 #include "pch.h"
 #include <iostream>
 
-#include <WinSock2.h>
+#include <winsock2.h>
 #include <mswsock.h>
-#include <WS2tcpip.h>
+#include <ws2tcpip.h>
 #pragma comment(lib, "ws2_32.lib")
 
 void HandleError(const char* cause)
 {
     int32 errCode = ::WSAGetLastError();
-    cout << cause << " ErrorCode : " << errCode << '\n';
+    cout << cause << " ErrorCode : " << errCode << endl;
 }
 
 int main()
 {
-    this_thread::sleep_for(1s);
-
     WSAData wsaData;
     if (::WSAStartup(MAKEWORD(2, 2), &wsaData) != 0)
         return 0;
@@ -42,16 +40,15 @@ int main()
             // 원래 블록했어야 했는데... 너가 논블로킹으로 하라며?
             if (::WSAGetLastError() == WSAEWOULDBLOCK)
                 continue;
-
             // 이미 연결된 상태라면 break
             if (::WSAGetLastError() == WSAEISCONN)
                 break;
-
+            // Error
             break;
         }
     }
 
-    cout << "Connected to Server!" << '\n';
+    cout << "Connected to Server!" << endl;
 
     char sendBuffer[100] = "Hello World";
     WSAEVENT wsaEvent = ::WSACreateEvent();
@@ -67,12 +64,11 @@ int main()
 
         DWORD sendLen = 0;
         DWORD flags = 0;
-
         if (::WSASend(clientSocket, &wsaBuf, 1, &sendLen, flags, &overlapped, nullptr) == SOCKET_ERROR)
         {
             if (::WSAGetLastError() == WSA_IO_PENDING)
             {
-                // Pending 
+                // Pending
                 ::WSAWaitForMultipleEvents(1, &wsaEvent, TRUE, WSA_INFINITE, FALSE);
                 ::WSAGetOverlappedResult(clientSocket, &overlapped, &sendLen, FALSE, &flags);
             }
@@ -83,8 +79,8 @@ int main()
             }
         }
 
-        cout << "Send Data! Len= " << sizeof(sendBuffer) << '\n';
-     
+        cout << "Send Data ! Len = " << sizeof(sendBuffer) << endl;
+
         this_thread::sleep_for(1s);
     }
 
@@ -94,4 +90,3 @@ int main()
     // 윈속 종료
     ::WSACleanup();
 }
-
