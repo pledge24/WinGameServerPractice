@@ -169,57 +169,40 @@ void WorkerThreadMain(HANDLE iocpHandle)
 //    ::WSACleanup();
 //}
 
-void HelloThread()
+//atomic<int32> sum = 0;
+int32 sum = 0;
+
+void Add()
 {
-    cout << "Hello Thread" << endl;
+    for (int32 i = 0; i < 10e6; i++)
+    {
+        sum++;
+        // int32 eax = sum;
+        // eax = eax + 1;
+        // sum = eax;
+        //sum.fetch_add(1);
+    }
 }
 
-void HelloThread_2(int32 num)
+void Sub()
 {
-    cout << num << endl;
+    for (int32 i = 0; i < 10e6; i++)
+    {
+        sum--;
+        // int32 eax = sum;
+        // eax = eax - 1;
+        // sum = eax;
+        //sum.fetch_sub(1);
+    }
 }
 
 int main()
 {
-    // 쓰레드 선언 및 함수 할당
-    // std::thread t(HelloThread);
-    // cout << "Hello Main" << endl;
-  
-    // 예제1. get_id(): 쓰레드 id
-    std::thread t;                  // 쓰레드 선언.
-    auto id1 = t.get_id(); 
+    std::thread t1(Add);
+    std::thread t2(Sub);
 
-    t = std:: thread(HelloThread);  // main 쓰레드와 병렬로 실행.
-    auto id2 = t.get_id(); 
+    t1.join();
+    t2.join();
 
-    // 예제2. hardware_concurrency(): CPU 코어 개수
-    int32 count = t.hardware_concurrency(); // 16
-
-     //쓰레드 id가 0인지 아닌지 확인. (0이면 아직 살아있지 않은 쓰레드)
-     if (t.joinable()) 
-     {
-        // 쓰레드 t가 종료될 때까지 대기.
-        t.join();
-     }  
-
-    // detach(): 해당 쓰레드를 부모 쓰레드로부터 분리.
-    // id를 0으로 만들기 때문에 joinable() 호출 시 fasle가 반환된다.
-    // detach() 사용 시 부모 쓰레드가 해당 쓰레드보다 먼저 종료될 수 있다.
-    // t.detach(); 
-    // 쓰레드 선언과 할당을 분리해야하는 경우
-
-    vector<std::thread> v;
-    for (int32 i = 0; i < 10; i++)
-    {
-        v.push_back(std::thread(HelloThread_2, i));
-    }
-
-    // 숫자가 붙어 나올수도 있다.
-    for (int32 i = 0; i < 10; i++)
-    {
-        if (v[i].joinable())
-        {
-            v[i].join();
-        }
-    }
+    cout << sum << '\n';
 }
