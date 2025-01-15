@@ -7,6 +7,8 @@
 #include <future>
 #include "ThreadManager.h"
 
+#include <thread>
+
 #include <winsock2.h>
 #include <mswsock.h>
 #include <ws2tcpip.h>
@@ -74,95 +76,150 @@ void WorkerThreadMain(HANDLE iocpHandle)
     }
 }
 
+//int main()
+//{
+//    WSAData wsaData;
+//    if (::WSAStartup(MAKEWORD(2, 2), &wsaData) != 0)
+//        return 0;
+//
+//    SOCKET listenSocket = ::socket(AF_INET, SOCK_STREAM, 0);
+//    if (listenSocket == INVALID_SOCKET)
+//        return 0;
+//
+//    SOCKADDR_IN serverAddr;
+//    ::memset(&serverAddr, 0, sizeof(serverAddr));
+//    serverAddr.sin_family = AF_INET;
+//    serverAddr.sin_addr.s_addr = ::htonl(INADDR_ANY);
+//    serverAddr.sin_port = ::htons(7777);
+//
+//    if (::bind(listenSocket, (SOCKADDR*)&serverAddr, sizeof(serverAddr)) == SOCKET_ERROR)
+//        return 0;
+//
+//    if (::listen(listenSocket, SOMAXCONN) == SOCKET_ERROR)
+//        return 0;
+//
+//    cout << "Accept" << endl;
+//
+//    // Overlapped 모델 (Completion Routine 콜백 기반)
+//    // - 비동기 입출력 함수 완료되면, 쓰레드마다 있는 APC 큐에 일감이 쌓임
+//    // - Alertable Wait 상태로 들어가서 APC 큐 비우기 (콜백 함수)
+//    // 단점) APC큐 쓰레드마다 있다! Alertable Wait 자체도 조금 부담!
+//    // 단점) 이벤트 방식 소켓:이벤트 1:1 대응
+//
+//    // IOCP (Completion Port) 모델
+//    // - APC -> Completion Port (쓰레드마다 있는건 아니고 1개. 중앙에서 관리하는 APC 큐?)
+//    // - Alertable Wait -> CP 결과 처리를 GetQueuedCompletionStatus
+//    // 쓰레드랑 궁합이 굉장히 좋다!
+//
+//    // CreateIoCompletionPort
+//    // GetQueuedCompletionStatus
+//
+//    vector<Session*> sessionManager;
+//
+//    // CP 생성
+//    HANDLE iocpHandle = ::CreateIoCompletionPort(INVALID_HANDLE_VALUE, NULL, 0, 0);
+//
+//    // WorkerThreads
+//    for (int32 i = 0; i < 5; i++)
+//        GThreadManager->Launch([=]() { WorkerThreadMain(iocpHandle); });
+//
+//    // Main Thread = Accept 담당
+//    while (true)
+//    {
+//        SOCKADDR_IN clientAddr;
+//        int32 addrLen = sizeof(clientAddr);
+//
+//        SOCKET clientSocket = ::accept(listenSocket, (SOCKADDR*)&clientAddr, &addrLen);
+//        if (clientSocket == INVALID_SOCKET)
+//            return 0;
+//
+//        Session* session = new Session();
+//        session->socket = clientSocket;
+//        sessionManager.push_back(session);
+//
+//        cout << "Client Connected !" << endl;
+//
+//        // 소켓을 CP에 등록
+//        ::CreateIoCompletionPort((HANDLE)clientSocket, iocpHandle, /*Key*/(ULONG_PTR)session, 0);
+//
+//        WSABUF wsaBuf;
+//        wsaBuf.buf = session->recvBuffer;
+//        wsaBuf.len = BUFSIZE;
+//
+//        OverlappedEx* overlappedEx = new OverlappedEx();
+//        overlappedEx->type = IO_TYPE::READ;
+//
+//        // ADD_REF
+//        DWORD recvLen = 0;
+//        DWORD flags = 0;
+//        ::WSARecv(clientSocket, &wsaBuf, 1, &recvLen, &flags, &overlappedEx->overlapped, NULL);
+//
+//        // 유저가 게임 접속 종료!
+//        //Session* s = sessionManager.back();
+//        //sessionManager.pop_back();
+//        //xdelete(s);
+//
+//        //::closesocket(session.socket);
+//        //::WSACloseEvent(wsaEvent);
+//    }
+//
+//    GThreadManager->Join();
+//
+//    // 윈속 종료
+//    ::WSACleanup();
+//}
+
+void HelloThread()
+{
+    cout << "Hello Thread" << endl;
+}
+
+void HelloThread_2(int32 num)
+{
+    cout << num << endl;
+}
+
 int main()
 {
-    WSAData wsaData;
-    if (::WSAStartup(MAKEWORD(2, 2), &wsaData) != 0)
-        return 0;
+    // 쓰레드 선언 및 함수 할당
+    // std::thread t(HelloThread);
+    // cout << "Hello Main" << endl;
+  
+    // 예제1. get_id(): 쓰레드 id
+    std::thread t;                  // 쓰레드 선언.
+    auto id1 = t.get_id(); 
 
-    SOCKET listenSocket = ::socket(AF_INET, SOCK_STREAM, 0);
-    if (listenSocket == INVALID_SOCKET)
-        return 0;
+    t = std:: thread(HelloThread);  // main 쓰레드와 병렬로 실행.
+    auto id2 = t.get_id(); 
 
-    SOCKADDR_IN serverAddr;
-    ::memset(&serverAddr, 0, sizeof(serverAddr));
-    serverAddr.sin_family = AF_INET;
-    serverAddr.sin_addr.s_addr = ::htonl(INADDR_ANY);
-    serverAddr.sin_port = ::htons(7777);
+    // 예제2. hardware_concurrency(): CPU 코어 개수
+    int32 count = t.hardware_concurrency(); // 16
 
-    if (::bind(listenSocket, (SOCKADDR*)&serverAddr, sizeof(serverAddr)) == SOCKET_ERROR)
-        return 0;
+     //쓰레드 id가 0인지 아닌지 확인. (0이면 아직 살아있지 않은 쓰레드)
+     if (t.joinable()) 
+     {
+        // 쓰레드 t가 종료될 때까지 대기.
+        t.join();
+     }  
 
-    if (::listen(listenSocket, SOMAXCONN) == SOCKET_ERROR)
-        return 0;
+    // detach(): 해당 쓰레드를 부모 쓰레드로부터 분리.
+    // id를 0으로 만들기 때문에 joinable() 호출 시 fasle가 반환된다.
+    // detach() 사용 시 부모 쓰레드가 해당 쓰레드보다 먼저 종료될 수 있다.
+    // t.detach(); 
+    // 쓰레드 선언과 할당을 분리해야하는 경우
 
-    cout << "Accept" << endl;
-
-    // Overlapped 모델 (Completion Routine 콜백 기반)
-    // - 비동기 입출력 함수 완료되면, 쓰레드마다 있는 APC 큐에 일감이 쌓임
-    // - Alertable Wait 상태로 들어가서 APC 큐 비우기 (콜백 함수)
-    // 단점) APC큐 쓰레드마다 있다! Alertable Wait 자체도 조금 부담!
-    // 단점) 이벤트 방식 소켓:이벤트 1:1 대응
-
-    // IOCP (Completion Port) 모델
-    // - APC -> Completion Port (쓰레드마다 있는건 아니고 1개. 중앙에서 관리하는 APC 큐?)
-    // - Alertable Wait -> CP 결과 처리를 GetQueuedCompletionStatus
-    // 쓰레드랑 궁합이 굉장히 좋다!
-
-    // CreateIoCompletionPort
-    // GetQueuedCompletionStatus
-
-    vector<Session*> sessionManager;
-
-    // CP 생성
-    HANDLE iocpHandle = ::CreateIoCompletionPort(INVALID_HANDLE_VALUE, NULL, 0, 0);
-
-    // WorkerThreads
-    for (int32 i = 0; i < 5; i++)
-        GThreadManager->Launch([=]() { WorkerThreadMain(iocpHandle); });
-
-    // Main Thread = Accept 담당
-    while (true)
+    vector<std::thread> v;
+    for (int32 i = 0; i < 10; i++)
     {
-        SOCKADDR_IN clientAddr;
-        int32 addrLen = sizeof(clientAddr);
-
-        SOCKET clientSocket = ::accept(listenSocket, (SOCKADDR*)&clientAddr, &addrLen);
-        if (clientSocket == INVALID_SOCKET)
-            return 0;
-
-        Session* session = new Session();
-        session->socket = clientSocket;
-        sessionManager.push_back(session);
-
-        cout << "Client Connected !" << endl;
-
-        // 소켓을 CP에 등록
-        ::CreateIoCompletionPort((HANDLE)clientSocket, iocpHandle, /*Key*/(ULONG_PTR)session, 0);
-
-        WSABUF wsaBuf;
-        wsaBuf.buf = session->recvBuffer;
-        wsaBuf.len = BUFSIZE;
-
-        OverlappedEx* overlappedEx = new OverlappedEx();
-        overlappedEx->type = IO_TYPE::READ;
-
-        // ADD_REF
-        DWORD recvLen = 0;
-        DWORD flags = 0;
-        ::WSARecv(clientSocket, &wsaBuf, 1, &recvLen, &flags, &overlappedEx->overlapped, NULL);
-
-        // 유저가 게임 접속 종료!
-        //Session* s = sessionManager.back();
-        //sessionManager.pop_back();
-        //xdelete(s);
-
-        //::closesocket(session.socket);
-        //::WSACloseEvent(wsaEvent);
+        v.push_back(std::thread(HelloThread_2, i));
     }
 
-    GThreadManager->Join();
-
-    // 윈속 종료
-    ::WSACleanup();
+    // 숫자가 붙어 나올수도 있다.
+    for (int32 i = 0; i < 10; i++)
+    {
+        if (v[i].joinable())
+        {
+            v[i].join();
+        }
+    }
 }
