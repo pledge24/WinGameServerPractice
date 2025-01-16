@@ -14,6 +14,9 @@
 #include <ws2tcpip.h>
 #pragma comment(lib, "ws2_32.lib")
 
+#include "AccountManager.h"
+#include "UserManager.h"
+
 #include "Memory.h"
 
 void HandleError(const char* cause)
@@ -169,63 +172,39 @@ void WorkerThreadMain(HANDLE iocpHandle)
 //    ::WSACleanup();
 //}
 
-// [1][2][3][4][][][][][]
-vector<int32> v;
-
-// Mutual Exclusive (상호배타적)
-mutex m;
-
-// RAII (Resource Acquisition Is Initialization)
-template<typename T>
-class LockGuard
+void Func1()
 {
-public:
-    LockGuard(T& m)
+    for (int32 i = 0; i < 1000; i++)
     {
-        _mutex = &M;
-        _mutex->lock();
+        UserManager::Instance()->ProcessSave();
     }
+}
 
-    ~LockGuard(T& m)
-    {
-        _mutex->unlock();
-    }
-
-private:
-    T* _mutex;
-};
-
-void Push()
+void Func2()
 {
-    for (int32 i = 0; i < 10000; i++)
+    for (int32 i = 0; i < 1000; i++)
     {
-        // 자물쇠 잠그기
-        // LockGuard<std::mutex> lockGuard(m);
-        // std::lock_guard<std::mutex> lockGuard(m);   // 표준도 있다.
-
-        // unique_lock: 이런저런 옵션이 있는 lock
-        std::unique_lock<std::mutex> uniqueLock(m, std::defer_lock);   // lock 인터페이스만 생성
-        uniqueLock.lock();  // 이때 잠근다.
-
-        v.push_back(i);
-
-        if (i == 5000)
-        {
-            break;
-        }
-
+        AccountManager::Instance()->ProcessLogin();
     }
 }
 
 int main()
 {
-    v.reserve(20000);
-
-    std::thread t1(Push);
-    std::thread t2(Push);
+    std::thread t1(Func1);
+    std::thread t2(Func2);
 
     t1.join();
     t2.join();
 
-    cout << v.size() << '\n';
+    cout << "Jobs done" << endl;
+
+    // 참고1
+    mutex m1;
+    mutex m2;
+    std::lock(m1, m2); // == m1.lock(); m2.lock();
+
+    // 참고2. adopt_lock : 해당 이미 lock된 mutex를 넣어줬다. lock은 하지말고 나중에 소멸할 때 unlock만 해달라
+    lock_guard<mutex> g1(m1, std::adopt_lock);
+    lock_guard<mutex> g2(m2, std::adopt_lock);
+
 }
