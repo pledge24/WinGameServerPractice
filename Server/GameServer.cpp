@@ -169,40 +169,63 @@ void WorkerThreadMain(HANDLE iocpHandle)
 //    ::WSACleanup();
 //}
 
-//atomic<int32> sum = 0;
-int32 sum = 0;
+// [1][2][3][4][][][][][]
+vector<int32> v;
 
-void Add()
+// Mutual Exclusive (상호배타적)
+mutex m;
+
+// RAII (Resource Acquisition Is Initialization)
+template<typename T>
+class LockGuard
 {
-    for (int32 i = 0; i < 10e6; i++)
+public:
+    LockGuard(T& m)
     {
-        sum++;
-        // int32 eax = sum;
-        // eax = eax + 1;
-        // sum = eax;
-        //sum.fetch_add(1);
+        _mutex = &M;
+        _mutex->lock();
     }
-}
 
-void Sub()
-{
-    for (int32 i = 0; i < 10e6; i++)
+    ~LockGuard(T& m)
     {
-        sum--;
-        // int32 eax = sum;
-        // eax = eax - 1;
-        // sum = eax;
-        //sum.fetch_sub(1);
+        _mutex->unlock();
+    }
+
+private:
+    T* _mutex;
+};
+
+void Push()
+{
+    for (int32 i = 0; i < 10000; i++)
+    {
+        // 자물쇠 잠그기
+        // LockGuard<std::mutex> lockGuard(m);
+        // std::lock_guard<std::mutex> lockGuard(m);   // 표준도 있다.
+
+        // unique_lock: 이런저런 옵션이 있는 lock
+        std::unique_lock<std::mutex> uniqueLock(m, std::defer_lock);   // lock 인터페이스만 생성
+        uniqueLock.lock();  // 이때 잠근다.
+
+        v.push_back(i);
+
+        if (i == 5000)
+        {
+            break;
+        }
+
     }
 }
 
 int main()
 {
-    std::thread t1(Add);
-    std::thread t2(Sub);
+    v.reserve(20000);
+
+    std::thread t1(Push);
+    std::thread t2(Push);
 
     t1.join();
     t2.join();
 
-    cout << sum << '\n';
+    cout << v.size() << '\n';
 }
