@@ -14,9 +14,6 @@
 #include <ws2tcpip.h>
 #pragma comment(lib, "ws2_32.lib")
 
-#include "AccountManager.h"
-#include "UserManager.h"
-
 #include "Memory.h"
 
 void HandleError(const char* cause)
@@ -172,39 +169,82 @@ void WorkerThreadMain(HANDLE iocpHandle)
 //    ::WSACleanup();
 //}
 
-void Func1()
+class SpinLock
 {
-    for (int32 i = 0; i < 1000; i++)
+public:
+    void lock()
     {
-        UserManager::Instance()->ProcessSave();
+        // CAS (Compare-And-Swap)
+        bool expected = false;  // 예상 값
+        bool desired = true;    // 바꿀 값
+
+        // CAS 의사 코드
+        // _locked.compare_exchange_strong(expected, desired);
+
+        //if (_locked == expected)
+        //{
+        //    expected = _locked;   // 이걸 왜 할까...
+        //    _locked = desired;
+        //    return true;
+        //}
+        //else
+        //{
+        //    expected = _locked;   // XX 이걸 왜 할까...
+        //    return false;
+        //}
+
+        // atomic 함수
+        while (_locked.compare_exchange_strong(expected, desired) == false)
+        {
+            expected = false; // 192번줄(XX) 때문에 생긴 코드
+        }
+
+        //while (_locked)
+        //{
+
+        //}
+
+        //_locked = true;
+    }
+
+    void unlock()
+    {
+        _locked.store(false);
+    }
+
+private:
+    atomic<bool> _locked = false;
+};
+
+int32 sum = 0;
+mutex m;
+SpinLock spinLock;
+
+void Add()
+{
+    for (int32 i = 0; i < 100'000; i++)
+    {
+        lock_guard<SpinLock> guard(spinLock);
+        sum++;
     }
 }
 
-void Func2()
+void Sub()
 {
-    for (int32 i = 0; i < 1000; i++)
+    for (int32 i = 0; i < 100'000; i++)
     {
-        AccountManager::Instance()->ProcessLogin();
+        lock_guard<SpinLock> guard(spinLock);
+        sum--;
     }
 }
 
 int main()
 {
-    std::thread t1(Func1);
-    std::thread t2(Func2);
+    thread t1(Add);
+    thread t2(Sub);
 
     t1.join();
     t2.join();
 
-    cout << "Jobs done" << endl;
-
-    // 참고1
-    mutex m1;
-    mutex m2;
-    std::lock(m1, m2); // == m1.lock(); m2.lock();
-
-    // 참고2. adopt_lock : 해당 이미 lock된 mutex를 넣어줬다. lock은 하지말고 나중에 소멸할 때 unlock만 해달라
-    lock_guard<mutex> g1(m1, std::adopt_lock);
-    lock_guard<mutex> g2(m2, std::adopt_lock);
-
+    cout << sum << endl;
 }
