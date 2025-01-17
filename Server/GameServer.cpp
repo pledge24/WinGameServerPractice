@@ -169,94 +169,45 @@ void WorkerThreadMain(HANDLE iocpHandle)
 //    ::WSACleanup();
 //}
 
-int64 result;
+int32 buffer[10000][10000];
 
-int64 Calculate()
+int main(void)
 {
-    int64 sum = 0;
+    memset(buffer, 0, sizeof(buffer));
 
-    for (int32 i = 0; i < 100'000; i++)
-        sum += i;
-
-    result = sum;
-
-    return sum;
-}
-
-void PromiseWorker(std::promise<string>&& promise)
-{
-    promise.set_value("Secret Message");
-}
-
-void TaskWorker(std::packaged_task<int64(void)>&& task)
-{
-    task();
-}
-
-int main()
-{
-    // 동기(synchronous) 실행
-    // int64 sum = Calculate();
-    // cout << sum << '\n';
-
-    // std::future
     {
-        // 1) deferred: lazy evaluation 지연해서 실행
-        // 2) async: 별도의 쓰레드를 만들어서 실행
-        // 3) deferred | async: 둘 중 알아서
-        // 언젠가 미래에 결과를 뱉어준다!
-        std::future<int64> future = std::async(std::launch::async, Calculate);
+        uint64 start = GetTickCount64();
 
-        // TODO
-
-        // 작업의 진척도를 보는 peek 기능
-        std::future_status status =  future.wait_for(1ms);
-        //if (status == future_status::ready)
-        //{
-        //    // 처리
-        //}
-
-        // 생략하고 get을 호출해도 결과는 같다.
-        //future.wait(); // wait_for(INFINITE) 
-
-        int64 sum = future.get(); // 결과물이 이제서야 필요하다!
-
-        // 클래스 멤버 함수를 넣어주고 싶다면?
-        class Knight
+        int64 sum = 0;
+        for (int32 i = 0; i < 10000; i++)
         {
-        public:
-            int64 GetHp() { return 100; }
-        };
+            for (int32 j = 0; j < 10000; j++)
+            {
+                sum += buffer[i][j];
+            }
+        }
 
-        Knight knight;
-        std::future<int64> future2 = std::async(std::launch::async, &Knight::GetHp, knight);
+        uint64 end = GetTickCount64();
+        cout << "Elapsed Tick " << (end - start) << endl;
     }
 
-    // std::promise
     {
-        // 미래(std::future)에 결과물을 반환해줄거라 약속(std::promise)해줘~ (계약서?)
-        std::promise<string> promise;
-        std::future<string> future = promise.get_future();
+        uint64 start = GetTickCount64();
 
-        thread t(PromiseWorker, std::move(promise));
+        int64 sum = 0;
+        for (int32 i = 0; i < 10000; i++)
+        {
+            for (int32 j = 0; j < 10000; j++)
+            {
+                sum += buffer[j][i];
+            }
+        }
 
-        string message = future.get();
-        cout << message << endl;
-
-        t.join();
+        uint64 end = GetTickCount64();
+        cout << "Elapsed Tick " << (end - start) << endl;
     }
 
-    // std::packaged_Task
-    {
-        std::packaged_task<int64(void)> task(Calculate);
-        std::future<int64> future = task.get_future();
-
-        std::thread t(TaskWorker, std::move(task));
-
-        int64 sum = future.get();
-        cout << sum << endl;
-
-        t.join();
-    }
- 
+    // Elapsed Tick 79
+    // Elapsed Tick 264
 }
+ 
