@@ -169,43 +169,44 @@ void WorkerThreadMain(HANDLE iocpHandle)
 //    ::WSACleanup();
 //}
 
-atomic<bool> ready;
-int32 value;
+// TLS
+// __declspec(thread) int32 value; // 예전 버전.
+thread_local int32 LThreadId = 0;
 
-void Producer()
+void ThreadMain(int32 threadId)
 {
-    value = 10;
+    LThreadId = threadId;
 
-    //ready.store(true, memory_order_seq_cst
-    ready.store(true, memory_order_release);
-
-    //std::atomic_thread_fence(memory_order::memory_order_release);
-    // ----------------- 절취선 ---------------
+    while (true)
+    {
+        cout << "Hi! I am Thread " << LThreadId << endl;
+        this_thread::sleep_for(1s);
+    }
 }
 
-void Consumer()
+int main()
 {
-    /*while (ready.load(memory_order_seq_cst) == false)
-        ;*/
-    
-    // ----------------- 절취선 ---------------
-    while (ready.load(memory_order_acquire) == false)
-        ;
+    vector<thread> threads;
 
-    cout << value << endl;
+    for (int32 i = 0; i < 10; i++)
+    {
+        int32 threadId = i + 1;
+        threads.push_back(thread(ThreadMain, threadId));
+    }
+
+    for (thread& t : threads)
+    {
+        t.join();
+    }
 }
 
-int main(void)
-{
-    ready = false;
-    value = 0;
-
-    thread t1(Producer);
-    thread t2(Consumer);
-
-    t1.join();
-    t2.join();
-
-    // Memory Model(정책)
-}
- 
+//Hi!I am Thread 1
+//Hi!I am Thread 3
+//Hi!I am Thread 2
+//Hi!I am Thread 4
+//Hi!I am Thread 9
+//Hi!I am Thread 7
+//Hi!I am Thread 10
+//Hi!I am Thread 5
+//Hi!I am Thread 6
+//Hi!I am Thread 8
