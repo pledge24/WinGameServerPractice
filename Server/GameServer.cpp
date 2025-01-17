@@ -169,61 +169,43 @@ void WorkerThreadMain(HANDLE iocpHandle)
 //    ::WSACleanup();
 //}
 
+atomic<bool> ready;
+int32 value;
+
+void Producer()
+{
+    value = 10;
+
+    //ready.store(true, memory_order_seq_cst
+    ready.store(true, memory_order_release);
+
+    //std::atomic_thread_fence(memory_order::memory_order_release);
+    // ----------------- 절취선 ---------------
+}
+
+void Consumer()
+{
+    /*while (ready.load(memory_order_seq_cst) == false)
+        ;*/
+    
+    // ----------------- 절취선 ---------------
+    while (ready.load(memory_order_acquire) == false)
+        ;
+
+    cout << value << endl;
+}
 
 int main(void)
 {
-    atomic<bool> flag = false;
+    ready = false;
+    value = 0;
 
-    // flag = true;
-    flag.store(true, memory_order::memory_order_seq_cst);
+    thread t1(Producer);
+    thread t2(Consumer);
 
-    // bool val = flag;
-    bool val = flag.load(memory_order::memory_order_seq_cst);
+    t1.join();
+    t2.join();
 
-    // 이전 flag 값을 prev에 넣고, flag 값을 수정
-    {
-        // bool prev = flag;
-        // flag = true;
-        flag.exchange(true);    // 읽고 쓰기를 한번에 해준다.(atomic)
-    }
-
-    // CAS (Compare-And-Swap) 조건부 수정
-    {
-        bool expected = false;
-        bool desired = true;
-        flag.compare_exchange_strong(expected, desired);
-
-        // compare_exchange_strong 의사코드
-        //if (flag == expected)
-        //{
-        //    // expected = flag;
-        //    flag = desired;
-        //    return true;
-        //}
-        //else
-        //{
-        //    expected = flag;
-        //    return false;
-        //}
-
-        flag.compare_exchange_weak(expected, desired);
-
-        // compare_exchange_weak 의사코드
-        // Spurious Failure
-        //if (flag == expected)
-        //{
-        //    // 다른 쓰레드의 Interruption을 받아서 중간에 실패가능
-        //    if(묘한 상황)
-        //        return false;
-        //    // expected = flag;
-        //    flag = desired;
-        //    return true;
-        //}
-        //else
-        //{
-        //    expected = flag;
-        //    return false;
-        //}
-    }
+    // Memory Model(정책)
 }
  
