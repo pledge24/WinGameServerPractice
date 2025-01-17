@@ -169,65 +169,54 @@ void WorkerThreadMain(HANDLE iocpHandle)
 //    ::WSACleanup();
 //}
 
-class SpinLock
+mutex m;
+queue<int32> q;
+HANDLE handle;
+
+void Producer()
 {
-public:
-    void lock()
+    while (true)
     {
-        // CAS (Compare-And-Swap)
-        bool expected = false;  // 예상 값
-        bool desired = true;    // 바꿀 값
-
-        // atomic 함수
-        while (_locked.compare_exchange_strong(expected, desired) == false)
         {
-            expected = false; 
-
-            //this_thread::sleep_for(std::chrono::milliseconds(100))
-            this_thread::sleep_for(100ms);
-            //this_thread::yield(); // this_thread::sleep_for(0ms)
+            unique_lock<mutex> lock(m);
+            q.push(100);
         }
 
-    }
-
-    void unlock()
-    {
-        _locked.store(false);
-    }
-
-private:
-    atomic<bool> _locked = false;
-};
-
-int32 sum = 0;
-mutex m;
-SpinLock spinLock;
-
-void Add()
-{
-    for (int32 i = 0; i < 100'000; i++)
-    {
-        lock_guard<SpinLock> guard(spinLock);
-        sum++;
+        ::SetEvent(handle);
+        this_thread::sleep_for(100ms);
     }
 }
 
-void Sub()
+void Consumer()
 {
-    for (int32 i = 0; i < 100'000; i++)
+    while (true)
     {
-        lock_guard<SpinLock> guard(spinLock);
-        sum--;
+        ::WaitForSingleObject(handle, INFINITE);
+        // bManualReset을 true로 설정 시: ResetEvent(handle);
+
+        unique_lock<mutex> lock(m);
+        if (q.empty() == false)
+        {
+            int32 data = q.front();
+            q.pop();
+            cout << data << endl;
+        }
     }
 }
 
 int main()
 {
-    thread t1(Add);
-    thread t2(Sub);
+    // 커널 오브젝트
+    // Usage Count (커널 오브젝트 공통)
+    // Signaled(이벤트 발생) / Non-Signaled(이벤트 발생 X) << bool (커널 오브젝트 공통)
+    // Auto / Manual << bool
+    handle = ::CreateEvent(NULL/*보안속성*/, FALSE/*bManualReset*/, FALSE/*bInitialState*/, NULL);
+
+    thread t1(Producer);
+    thread t2(Consumer);
 
     t1.join();
     t2.join();
 
-    cout << sum << endl;
+    ::CloseHandle(handle);
 }
