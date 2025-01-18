@@ -8,8 +8,8 @@ class LockQueue
 public: 
 	LockQueue() { }
 
-	LockQueue(const LockQueue&) = delete;
-	LockQueue& operator=(const LockQueue&) = delete;
+	LockQueue(const LockQueue&) = delete;               // 복사 생성자 막음
+	LockQueue& operator=(const LockQueue&) = delete;    // 복사 연산자 막음
 
 	void Push(T value)
 	{

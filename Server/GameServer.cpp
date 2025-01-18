@@ -5,6 +5,9 @@
 #include <mutex>
 #include <windows.h>
 #include <future>
+
+#include "ConcurrentQueue.h"
+#include "ConcurrentStack.h"
 #include "ThreadManager.h"
 
 #include <thread>
@@ -16,65 +19,65 @@
 
 #include "Memory.h"
 
-void HandleError(const char* cause)
-{
-    int32 errCode = ::WSAGetLastError();
-    cout << cause << " ErrorCode : " << errCode << endl;
-}
-
-const int32 BUFSIZE = 1000;
-
-struct Session
-{
-    SOCKET socket = INVALID_SOCKET;
-    char recvBuffer[BUFSIZE] = {};
-    int32 recvBytes = 0;
-};
-
-enum IO_TYPE
-{
-    READ,
-    WRITE,
-    ACCEPT,
-    CONNECT,
-};
-
-struct OverlappedEx
-{
-    WSAOVERLAPPED overlapped = {};
-    int32 type = 0; // read, write, accept, connect ...
-};
-
-void WorkerThreadMain(HANDLE iocpHandle)
-{
-    while (true)
-    {
-        DWORD bytesTransferred = 0;
-        Session* session = nullptr;
-        OverlappedEx* overlappedEx = nullptr;
-
-        BOOL ret = ::GetQueuedCompletionStatus(iocpHandle, &bytesTransferred,
-            (ULONG_PTR*)&session, (LPOVERLAPPED*)&overlappedEx, INFINITE);
-
-        if (ret == FALSE || bytesTransferred == 0)
-        {
-            // TODO : 연결 끊김
-            continue;
-        }
-
-        ASSERT_CRASH(overlappedEx->type == IO_TYPE::READ);
-
-        cout << "Recv Data IOCP = " << bytesTransferred << endl;
-
-        WSABUF wsaBuf;
-        wsaBuf.buf = session->recvBuffer;
-        wsaBuf.len = BUFSIZE;
-
-        DWORD recvLen = 0;
-        DWORD flags = 0;
-        ::WSARecv(session->socket, &wsaBuf, 1, &recvLen, &flags, &overlappedEx->overlapped, NULL);
-    }
-}
+//void HandleError(const char* cause)
+//{
+//    int32 errCode = ::WSAGetLastError();
+//    cout << cause << " ErrorCode : " << errCode << endl;
+//}
+//
+//const int32 BUFSIZE = 1000;
+//
+//struct Session
+//{
+//    SOCKET socket = INVALID_SOCKET;
+//    char recvBuffer[BUFSIZE] = {};
+//    int32 recvBytes = 0;
+//};
+//
+//enum IO_TYPE
+//{
+//    READ,
+//    WRITE,
+//    ACCEPT,
+//    CONNECT,
+//};
+//
+//struct OverlappedEx
+//{
+//    WSAOVERLAPPED overlapped = {};
+//    int32 type = 0; // read, write, accept, connect ...
+//};
+//
+//void WorkerThreadMain(HANDLE iocpHandle)
+//{
+//    while (true)
+//    {
+//        DWORD bytesTransferred = 0;
+//        Session* session = nullptr;
+//        OverlappedEx* overlappedEx = nullptr;
+//
+//        BOOL ret = ::GetQueuedCompletionStatus(iocpHandle, &bytesTransferred,
+//            (ULONG_PTR*)&session, (LPOVERLAPPED*)&overlappedEx, INFINITE);
+//
+//        if (ret == FALSE || bytesTransferred == 0)
+//        {
+//            // TODO : 연결 끊김
+//            continue;
+//        }
+//
+//        ASSERT_CRASH(overlappedEx->type == IO_TYPE::READ);
+//
+//        cout << "Recv Data IOCP = " << bytesTransferred << endl;
+//
+//        WSABUF wsaBuf;
+//        wsaBuf.buf = session->recvBuffer;
+//        wsaBuf.len = BUFSIZE;
+//
+//        DWORD recvLen = 0;
+//        DWORD flags = 0;
+//        ::WSARecv(session->socket, &wsaBuf, 1, &recvLen, &flags, &overlappedEx->overlapped, NULL);
+//    }
+//}
 
 //int main()
 //{
@@ -169,44 +172,37 @@ void WorkerThreadMain(HANDLE iocpHandle)
 //    ::WSACleanup();
 //}
 
-// TLS
-// __declspec(thread) int32 value; // 예전 버전.
-thread_local int32 LThreadId = 0;
+LockQueue<int32> q;
+LockStack<int32> s;
 
-void ThreadMain(int32 threadId)
+void Push()
 {
-    LThreadId = threadId;
-
     while (true)
     {
-        cout << "Hi! I am Thread " << LThreadId << endl;
-        this_thread::sleep_for(1s);
+        int32 value = rand() % 100;
+        q.Push(value);
+        
+        this_thread::sleep_for(10ms);
     }
 }
 
-int main()
+void Pop()
 {
-    vector<thread> threads;
-
-    for (int32 i = 0; i < 10; i++)
+    while (true)
     {
-        int32 threadId = i + 1;
-        threads.push_back(thread(ThreadMain, threadId));
-    }
-
-    for (thread& t : threads)
-    {
-        t.join();
+        int32 data = 0;
+        if(q.TryPop(OUT data))
+            cout << data << endl;
     }
 }
 
-//Hi!I am Thread 1
-//Hi!I am Thread 3
-//Hi!I am Thread 2
-//Hi!I am Thread 4
-//Hi!I am Thread 9
-//Hi!I am Thread 7
-//Hi!I am Thread 10
-//Hi!I am Thread 5
-//Hi!I am Thread 6
-//Hi!I am Thread 8
+int main(void)
+{
+    thread t1(Push);
+    thread t2(Pop);
+    thread t3(Pop);
+
+    t1.join();
+    t2.join();
+    t3.join();
+}
