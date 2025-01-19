@@ -36,6 +36,9 @@
     <ClInclude Include="CoreMacro.h">
       <Filter>Main</Filter>
     </ClInclude>
+    <ClInclude Include="Lock.h">
+      <Filter>Thread</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="CorePch.cpp">
@@ -52,6 +55,9 @@
     </ClCompile>
     <ClCompile Include="CoreTLS.cpp">
       <Filter>Main</Filter>
+    </ClCompile>
+    <ClCompile Include="Lock.cpp">
+      <Filter>Thread</Filter>
     </ClCompile>
   </ItemGroup>
 </Project>
