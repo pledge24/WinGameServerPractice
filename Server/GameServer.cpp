@@ -8,6 +8,8 @@
 #include "CoreMacro.h"
 #include "ThreadManager.h"
 
+#include "RefCounting.h"
+
 #include <winsock2.h>
 #include <mswsock.h>
 #include <ws2tcpip.h>
@@ -168,64 +170,83 @@
 //    ::WSACleanup();
 //}
 
-bool isPrime(int number)
+class Wraight : public RefCountable
 {
-    if (number <= 1)
-        return false;
+public:
+    int _hp = 150;
+    int posX = 0;
+    int posY = 0;
+};
+
+using WraightRef = TSharedPtr<Wraight>;
+
+class Missile : public RefCountable
+{
+public:
+    void SetTarget(WraightRef target)
+    {
+        _target = target;
+        // 중간에 누군가가 개입
+        target->AddRef();
+        Test(target);
+    }
+
+    void Test(WraightRef& target)
+    {
+
+    }
     
-    for (int i = 2; i < number; i++)
+    bool Update()
     {
-        if (number % i == 0)
+        if (_target == nullptr)
+            return true;
+
+        int posX = _target->posX;
+        int posY = _target->posY;
+
+        // TODO: 쫓아간다.
+
+        if (_target->_hp == 0)
         {
-            return false;
+            _target->ReleaseRef();
+            _target = nullptr;
+            return true;
         }
+
+        return false;
     }
 
-    return true;
+    Wraight* _target = nullptr;
+};
 
-}
-
-int CountPrime(int start, int end)
-{
-    int count = 0;
-
-    for (int num = start; num <= end; num++)
-    {
-        if (isPrime(num))
-            count++;
-    }
-
-    return count;
-}
+using MissileRef = TSharedPtr<Missile>;
 
 int main(void)
 {
-    const int MAX_NUMBER = 1'000'000;
+    WraightRef wraight(new Wraight());
+    wraight->ReleaseRef();
+    MissileRef missile(new Missile());
+    missile->ReleaseRef();
 
-    vector<thread> threads;
+    missile->SetTarget(wraight);
 
-    // 1000 = 168
-    // 10'000 = 1229
-    // 1'000'000 = 78498
+    // 레이스가 피격 당함
+    wraight->_hp = 0;
+    //wraight->ReleaseRef();
+    wraight = nullptr;
 
-    int coreCount = thread::hardware_concurrency();
-    int jobCount = (MAX_NUMBER / coreCount) + 1;
-
-    atomic<int> primeCount = 0;
-
-    for (int i = 0; i < coreCount; i++)
+    while (true)
     {
-        int start = (i * jobCount) + 1;
-        int end = min(MAX_NUMBER, ((i + 1) * jobCount));
-
-        threads.push_back(thread([start, end, &primeCount]()
+        if (missile)
+        {
+            if (missile->Update())
             {
-                primeCount += CountPrime(start, end);
-            }));
+                //missile->ReleaseRef();
+                missile = nullptr;
+            }
+        }
     }
 
-    for (thread& t : threads)
-        t.join();
-
-    cout << primeCount << endl;
+    //missile->ReleaseRef();
+    missile = nullptr;
 }
