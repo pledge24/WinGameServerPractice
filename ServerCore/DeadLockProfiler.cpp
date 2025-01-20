@@ -48,12 +48,15 @@ void DeadLockProfiler::PopLock(const char* name)
 {
     LockGuard guard(_lock);
 
+    // --------- 안정화되면 없어도 되는 코드 ---------
     if (_lockStack.empty())
         CRASH("MULTIPLE_UNLOCK");
 
     int32 lockId = _nameToId[name];
     if (_lockStack.top() != lockId)
         CRASH("INVALID_UNLOCK");
+
+    // ------------------------------------------------
 
     _lockStack.pop();
 }
@@ -124,5 +127,5 @@ void DeadLockProfiler::Dfs(int32 here)
     }
 
     _finished[here] = true;
-    
+
 }

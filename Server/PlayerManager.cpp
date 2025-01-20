@@ -7,6 +7,9 @@ PlayerManager GPlayerManager;
 void PlayerManager::PlayerThenAccount()
 {
     WRITE_LOCK;
+
+    this_thread::sleep_for(1s);
+
     GAccountManager.Lock();
 }
 
