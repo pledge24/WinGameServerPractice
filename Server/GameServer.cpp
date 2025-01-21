@@ -9,13 +9,14 @@
 #include "ThreadManager.h"
 
 #include "RefCounting.h"
+#include "Memory.h"
 
 #include <winsock2.h>
 #include <mswsock.h>
 #include <ws2tcpip.h>
 #pragma comment(lib, "ws2_32.lib")
 
-#include "Memory.h"
+
 
 //void HandleError(const char* cause)
 //{
@@ -170,83 +171,73 @@
 //    ::WSACleanup();
 //}
 
-class Wraight : public RefCountable
+using KnightRef = TSharedPtr<class Knight>;
+
+class Knight : public RefCountable
 {
 public:
-    int _hp = 150;
-    int posX = 0;
-    int posY = 0;
+    Knight()
+    {
+        cout << "Knight()" << endl;
+    }
+
+    Knight(int32 hp) : _hp(hp)
+    {
+        cout << "Knight(hp)" << endl;
+    }
+
+    ~Knight()
+    {
+        cout << "~Knight()" << endl;
+    }
+
+    //static void* operator new(size_t size)
+    //{
+    //    cout << "new! " << size << endl;
+    //    void* ptr = ::malloc(size);
+    //    return ptr;
+    //}
+
+    //static void operator delete(void* ptr)
+    //{
+    //    cout << "delete!" << endl;
+    //    ::free(ptr);
+    //}
+
+    KnightRef _target = nullptr;
+    int32 _hp = 100;
+    int32 _mp = 10;
 };
 
-using WraightRef = TSharedPtr<Wraight>;
-
-class Missile : public RefCountable
+void* operator new(size_t size)
 {
-public:
-    void SetTarget(WraightRef target)
-    {
-        _target = target;
-        // 중간에 누군가가 개입
-        //target->AddRef();
-        Test(target);
-    }
+    cout << "new! " << size << endl;
+    void* ptr = ::malloc(size);
+    return ptr;
+}
 
-    void Test(WraightRef& target)
-    {
-
-    }
-    
-    bool Update()
-    {
-        if (_target == nullptr)
-            return true;
-
-        int posX = _target->posX;
-        int posY = _target->posY;
-
-        // TODO: 쫓아간다.
-
-        if (_target->_hp == 0)
-        {
-            //_target->ReleaseRef();
-            _target = nullptr;
-            return true;
-        }
-
-        return false;
-    }
-
-    Wraight* _target = nullptr;
-};
-
-using MissileRef = TSharedPtr<Missile>;
-
-int main(void)
+void operator delete(void* ptr)
 {
-    WraightRef wraight(new Wraight());
-    wraight->ReleaseRef();
-    MissileRef missile(new Missile());
-    missile->ReleaseRef();
+    cout << "delete!" << endl;
+    ::free(ptr);
+}
 
-    missile->SetTarget(wraight);
+void* operator new[](size_t size)
+{
+    cout << "new[]! " << size << endl;
+    void* ptr = ::malloc(size);
+    return ptr;
+}
 
-    // 레이스가 피격 당함
-    wraight->_hp = 0;
-    //wraight->ReleaseRef();
-    wraight = nullptr;
+void operator delete[](void* ptr)
+{
+    cout << "delete[]!" << endl;
+    ::free(ptr);
+}
 
-    while (true)
-    {
-        if (missile)
-        {
-            if (missile->Update())
-            {
-                //missile->ReleaseRef();
-                missile = nullptr;
-            }
-        }
-    }
+int main()
+{
+    Knight* knight = xnew<Knight>(100);
 
-    //missile->ReleaseRef();
-    missile = nullptr;
+    xdelete(knight);
 }
