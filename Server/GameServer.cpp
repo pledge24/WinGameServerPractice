@@ -202,17 +202,5 @@ public:
 
 int main()
 {
-    //Knight* knight = xnew<Knight>(100);
-
-    //xdelete(knight);
-
-    //knight->_hp = 100;
-
-    //메모리 오버플로우
-    // [                    [   ]]
-    Knight* knight = (Knight*)xnew<Player>();
-
-    knight->_hp = 100;
-
-    xdelete(knight);
+    Vector<Knight> v(100);
 }
