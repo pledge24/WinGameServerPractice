@@ -187,7 +187,7 @@ public:
     {
         _target = target;
         // 중간에 누군가가 개입
-        target->AddRef();
+        //target->AddRef();
         Test(target);
     }
 
@@ -208,7 +208,7 @@ public:
 
         if (_target->_hp == 0)
         {
-            _target->ReleaseRef();
+            //_target->ReleaseRef();
             _target = nullptr;
             return true;
         }
