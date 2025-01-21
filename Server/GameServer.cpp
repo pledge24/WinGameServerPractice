@@ -171,9 +171,14 @@
 //    ::WSACleanup();
 //}
 
-using KnightRef = TSharedPtr<class Knight>;
+class Player
+{
+public:
+    Player() {}
+    virtual ~Player() {}
+};
 
-class Knight : public RefCountable
+class Knight : public Player
 {
 public:
     Knight()
@@ -191,53 +196,23 @@ public:
         cout << "~Knight()" << endl;
     }
 
-    //static void* operator new(size_t size)
-    //{
-    //    cout << "new! " << size << endl;
-    //    void* ptr = ::malloc(size);
-    //    return ptr;
-    //}
-
-    //static void operator delete(void* ptr)
-    //{
-    //    cout << "delete!" << endl;
-    //    ::free(ptr);
-    //}
-
-    KnightRef _target = nullptr;
     int32 _hp = 100;
     int32 _mp = 10;
 };
 
-void* operator new(size_t size)
-{
-    cout << "new! " << size << endl;
-    void* ptr = ::malloc(size);
-    return ptr;
-}
-
-void operator delete(void* ptr)
-{
-    cout << "delete!" << endl;
-    ::free(ptr);
-}
-
-void* operator new[](size_t size)
-{
-    cout << "new[]! " << size << endl;
-    void* ptr = ::malloc(size);
-    return ptr;
-}
-
-void operator delete[](void* ptr)
-{
-    cout << "delete[]!" << endl;
-    ::free(ptr);
-}
-
 int main()
 {
-    Knight* knight = xnew<Knight>(100);
+    //Knight* knight = xnew<Knight>(100);
+
+    //xdelete(knight);
+
+    //knight->_hp = 100;
+
+    //메모리 오버플로우
+    // [                    [   ]]
+    Knight* knight = (Knight*)xnew<Player>();
+
+    knight->_hp = 100;
 
     xdelete(knight);
 }
