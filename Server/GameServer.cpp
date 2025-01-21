@@ -178,75 +178,56 @@ public:
     int posY = 0;
 };
 
-using WraightRef = TSharedPtr<Wraight>;
-
 class Missile : public RefCountable
 {
 public:
-    void SetTarget(WraightRef target)
+    void SetTarget(Wraight* target)
     {
         _target = target;
-        // 중간에 누군가가 개입
         target->AddRef();
-        Test(target);
-    }
-
-    void Test(WraightRef& target)
-    {
-
     }
     
-    bool Update()
+    void Update()
     {
+        // 참조가 없다면 리턴.
         if (_target == nullptr)
-            return true;
+            return;
 
         int posX = _target->posX;
         int posY = _target->posY;
 
         // TODO: 쫓아간다.
 
+        // 타켓이 이미 죽은 상황
         if (_target->_hp == 0)
         {
-            _target->ReleaseRef();
-            _target = nullptr;
-            return true;
+            _target->ReleaseRef();  // 참조 카운트 1 감소.
+            _target = nullptr;      // missile클래스 내 참조 제거.
         }
-
-        return false;
     }
 
     Wraight* _target = nullptr;
 };
 
-using MissileRef = TSharedPtr<Missile>;
-
 int main(void)
 {
-    WraightRef wraight(new Wraight());
-    wraight->ReleaseRef();
-    MissileRef missile(new Missile());
-    missile->ReleaseRef();
-
+    Wraight* wraight = new Wraight();
+    Missile* missile = new Missile();
     missile->SetTarget(wraight);
 
     // 레이스가 피격 당함
     wraight->_hp = 0;
-    //wraight->ReleaseRef();
+    wraight->ReleaseRef();
     wraight = nullptr;
 
     while (true)
     {
         if (missile)
         {
-            if (missile->Update())
-            {
-                //missile->ReleaseRef();
-                missile = nullptr;
-            }
+            missile->Update();
         }
     }
 
-    //missile->ReleaseRef();
+    missile->ReleaseRef();
     missile = nullptr;
 }
