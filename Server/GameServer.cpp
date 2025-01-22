@@ -10,6 +10,7 @@
 
 #include "RefCounting.h"
 #include "Memory.h"
+#include "ObjectPool.h"
 
 #include <winsock2.h>
 #include <mswsock.h>
@@ -177,8 +178,31 @@ public:
     int32 _hp = rand() % 1000;
 };
 
+class Monster
+{
+public:
+    int64 _id = 0;
+};
+
 int main(void)
 {
+    Knight* knights[100];
+
+    for (int32 i = 0; i < 100; i++)
+        knights[i] = ObjectPool<Knight>::Pop();    
+    
+    for (int32 i = 0; i < 100; i++)
+    {
+        ObjectPool<Knight>::Push(knights[i]);
+        knights[i] = nullptr;
+    }
+        
+    //Knight* k = ObjectPool<Knight>::Pop();
+    //ObjectPool<Knight>::Push(k);
+    //shared_ptr<Knight> sptr = { ObjectPool<Knight>::Pop(), ObjectPool<Knight>::Push };
+    shared_ptr<Knight> sptr = ObjectPool<Knight>::MakeShared();
+    //shared_ptr<Knight> sptr2 = MakeShared<Knight>();
+
     for (int32 i = 0; i < 2; i++)
     {
         GThreadManager->Launch([]()
