@@ -10,6 +10,7 @@
 
 #include "RefCounting.h"
 #include "Memory.h"
+#include "LockFreeStack.h"
 
 #include <winsock2.h>
 #include <mswsock.h>
@@ -171,52 +172,58 @@
 //    ::WSACleanup();
 //}
 
-class Player
+DECLSPEC_ALIGN(16)
+class Data
 {
 public:
-    Player() {}
-    virtual ~Player() {}
+    SListEntry _entry;
+    int64 _rand = rand() % 1000;
 };
 
-class Knight : public Player
+SListHeader* GHeader;
+
+int main(void)
 {
-public:
-    Knight()
-    {
-        cout << "Knight()" << endl;
-    }
+    GHeader = new SListHeader();
+    ASSERT_CRASH(((uint64)GHeader % 16) == 0);
+    InitializeHead(GHeader);
 
-    Knight(int32 hp) : _hp(hp)
-    {
-        cout << "Knight(hp)" << endl;
-    }
-
-    ~Knight()
-    {
-        cout << "~Knight()" << endl;
-    }
-
-    int32 _hp = 100;
-    int32 _mp = 10;
-};
-
-int main()
-{
-    for (int32 i = 0; i < 5; i++)
+    for (int32 i = 0; i < 3; i++)
     {
         GThreadManager->Launch([]()
             {
                 while (true)
                 {
-                    Vector<Knight> v(10);
+                    Data* data = new Data();
+                    ASSERT_CRASH(((uint64)data % 16) == 0);
 
-                    Map<int32, Knight> m;
-                    m[100] = Knight();
-
+                    PushEntrySList(GHeader, (SListEntry*)data);
                     this_thread::sleep_for(10ms);
                 }
             });
     }
-    
+
+    for (int32 i = 0; i < 2; i++)
+    {
+        GThreadManager->Launch([]()
+            {
+                while (true)
+                {
+                    Data* pop = nullptr;
+                    pop = (Data*)PopEntrySList(GHeader);
+
+                    if (pop)
+                    {
+                        cout << pop->_rand << endl;
+                        delete pop;
+                    }
+                    else
+                    {
+                        cout << "NONE" << endl;
+                    }
+                }
+            });
+    }
+
     GThreadManager->Join();
 }
