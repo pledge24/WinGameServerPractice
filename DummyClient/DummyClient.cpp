@@ -55,7 +55,7 @@ int main()
         NetAddress(L"127.0.0.1", 7777),
         MakeShared<IocpCore>(),
         MakeShared<ServerSession>,    // TODO : SessoinManager 등
-        1);
+        5);
 
     ASSERT_CRASH(service->Start());
 
