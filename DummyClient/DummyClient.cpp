@@ -3,7 +3,7 @@
 #include "Service.h"
 #include "Session.h"
 
-char sendBuffer[] = "Hello World";
+char sendData[] = "Hello World";
 
 class ServerSession : public Session
 {
@@ -16,7 +16,10 @@ public:
     virtual void OnConnected() override
     {
         cout << "Connected To Server" << endl;
-        Send((BYTE*)sendBuffer, sizeof(sendBuffer));
+
+        SendBufferRef sendBuffer = MakeShared<SendBuffer>(4096);
+        sendBuffer->CopyData(sendData, sizeof(sendData));
+        Send(sendBuffer);
     }
 
     virtual int32 OnRecv(BYTE* buffer, int32 len) override
@@ -26,7 +29,10 @@ public:
 
         this_thread::sleep_for(1s);
 
-        Send((BYTE*)sendBuffer, sizeof(sendBuffer));
+        SendBufferRef sendBuffer = MakeShared<SendBuffer>(4096);
+        sendBuffer->CopyData(sendData, sizeof(sendData));
+        Send(sendBuffer);
+
         return len;
     }
 
@@ -50,6 +56,7 @@ int main()
         MakeShared<IocpCore>(),
         MakeShared<ServerSession>,    // TODO : SessoinManager 등
         1);
+        5);
 
     ASSERT_CRASH(service->Start());
 
