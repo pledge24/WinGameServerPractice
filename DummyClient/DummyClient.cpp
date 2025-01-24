@@ -56,7 +56,6 @@ int main()
         MakeShared<IocpCore>(),
         MakeShared<ServerSession>,    // TODO : SessoinManager 등
         1);
-        5);
 
     ASSERT_CRASH(service->Start());
 
