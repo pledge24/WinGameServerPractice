@@ -18,6 +18,7 @@ void ClientPacketHandler::HandlePacket(BYTE* buffer, int32 len)
     }
 }
 
+#pragma pack(1)
 // 패킷 설계 TEMP
 struct BuffData
 {
@@ -25,41 +26,64 @@ struct BuffData
     float remainTime;
 };
 
-struct S_TEST
+// [PKT_S_TEST][BuffsListItem BuffsListItem BuffsListItem]
+struct PKT_S_TEST
 {
-    uint64 id;
-    uint32 hp;
-    uint16 attack;
-    // 가변 데이터
-    vector<int64> buffs;
+    struct BuffsListItem
+    {
+        uint64 buffId;
+        float remainTime;
+    };
+
+    uint16 packetSize;  // 공용 헤더
+    uint16 packetId;    // 공용 헤더
+    uint64 id;          // 8바이트
+    uint32 hp;          // 4바이트
+    uint16 attack;      // 2바이트
+    uint16 buffsOffset; // 가변 길이 오프셋
+    uint16 buffsCount;  // 버프 개수
+
+    bool Validate()
+    {
+        uint32 size = 0;
+        size += sizeof(PKT_S_TEST);
+        size += buffsCount * sizeof(BuffsListItem);
+        if (size != packetSize)
+            return false;
+
+        if (buffsOffset + buffsCount * sizeof(BuffsListItem) < packetSize)
+            return false;
+
+        return true;
+    }
 };
+#pragma pack()
 
 void ClientPacketHandler::Handle_S_TEST(BYTE* buffer, int32 len)
 {
     BufferReader br(buffer, len);
 
-    PacketHeader header;
-    br >> header;
+    if (len < sizeof(PKT_S_TEST))
+        return;
 
-    uint64 id;
-    uint32 hp;
-    uint16 attack;
-    br >> id >> hp >> attack;
+    PKT_S_TEST pkt;
+    br >> pkt;
 
-    cout << "ID: " << id << " HP : " << hp << " ATT : " << attack << endl;
+    if (pkt.Validate() == false)
+        return;
 
-    vector<BuffData> buffs;
-    uint16 buffCount;
-    br >> buffCount;
+    //cout << "ID: " << id << " HP : " << hp << " ATT : " << attack << endl;
 
-    buffs.resize(buffCount);
-    for (int32 i = 0; i < buffCount; i++)
+    vector<PKT_S_TEST::BuffsListItem> buffs;
+
+    buffs.resize(pkt.buffsCount);
+    for (int32 i = 0; i < pkt.buffsCount; i++)
     {
-        br >> buffs[i].buffId >> buffs[i].remainTime;
+        br >> buffs[i];
     }
 
-    cout << "BuffCount : " << buffCount << endl;
-    for (int32 i = 0; i < buffCount; i++)
+    cout << "BuffCount : " << pkt.buffsCount << endl;
+    for (int32 i = 0; i < pkt.buffsCount; i++)
     {
         cout << "BuffInfo: " << buffs[i].buffId << " " << buffs[i].remainTime << endl;
     }
