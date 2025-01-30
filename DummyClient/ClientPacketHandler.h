@@ -7,7 +7,7 @@ enum
 
 class ClientPacketHandler
 {
-public: 
+public:
     static void HandlePacket(BYTE* buffer, int32 len);
     static void Handle_S_TEST(BYTE* buffer, int32 len);
 };
@@ -26,7 +26,7 @@ public:
     PacketIterator      operator++(int32) { PacketIterator ret = *this; ++_index; return ret; }
 
 private:
-    C&                  _container;
+    C& _container;
     uint16              _index;
 };
 
