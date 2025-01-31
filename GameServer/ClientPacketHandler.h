@@ -8,8 +8,9 @@ enum : uint16
 {
     // 자동화
 	PKT_C_TEST = 1000,
-	PKT_S_TEST = 1001,
-	PKT_S_LOGIN = 1002,
+	PKT_C_MOVE = 1001,
+	PKT_S_TEST = 1002,
+	PKT_S_LOGIN = 1003,
 };
 
 // Custom Handlers
@@ -17,6 +18,7 @@ bool Handle_INVALID(PacketSessionRef& session, BYTE* buffer, int32 len);
 
 // 자동화
 bool Handle_C_TEST(PacketSessionRef& session, Protocol::C_TEST& pkt);
+bool Handle_C_MOVE(PacketSessionRef& session, Protocol::C_MOVE& pkt);
 
 class ClientPacketHandler
 {
@@ -28,6 +30,7 @@ public:
         
         // 자동화
 		GPacketHandler[PKT_C_TEST] = [](PacketSessionRef& session, BYTE* buffer, int32 len) { return HandlePacket<Protocol::C_TEST>(Handle_C_TEST, session, buffer, len); };
+		GPacketHandler[PKT_C_MOVE] = [](PacketSessionRef& session, BYTE* buffer, int32 len) { return HandlePacket<Protocol::C_MOVE>(Handle_C_MOVE, session, buffer, len); };
 	}
 
 	static bool HandlePacket(PacketSessionRef& session, BYTE* buffer, int32 len)

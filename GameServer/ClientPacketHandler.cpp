@@ -16,3 +16,8 @@ bool Handle_C_TEST(PacketSessionRef& session, Protocol::C_TEST& pkt)
 
     return true;
 }
+
+bool Handle_C_MOVE(PacketSessionRef& session, Protocol::C_MOVE& pkt)
+{
+    return true;
+}

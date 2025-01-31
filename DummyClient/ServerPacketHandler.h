@@ -8,8 +8,9 @@ enum : uint16
 {
     // 자동화
 	PKT_C_TEST = 1000,
-	PKT_S_TEST = 1001,
-	PKT_S_LOGIN = 1002,
+	PKT_C_MOVE = 1001,
+	PKT_S_TEST = 1002,
+	PKT_S_LOGIN = 1003,
 };
 
 // Custom Handlers
@@ -40,6 +41,7 @@ public:
 
     // 자동화
 	static SendBufferRef MakeSendBuffer(Protocol::C_TEST& pkt) { return MakeSendBuffer(pkt, PKT_C_TEST); }
+	static SendBufferRef MakeSendBuffer(Protocol::C_MOVE& pkt) { return MakeSendBuffer(pkt, PKT_C_MOVE); }
 
 private:
 	template<typename PacketType, typename ProcessFunc>
