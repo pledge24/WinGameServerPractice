@@ -50,7 +50,7 @@ private:
 private:
                         /*전송 관련*/
     bool                RegisterConnect();
-    bool                RegisterDiconnect();
+    bool                RegisterDisconnect();
     void                RegisterRecv();
     void                RegisterSend();
 
