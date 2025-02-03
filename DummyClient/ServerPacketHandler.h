@@ -6,7 +6,7 @@ extern PacketHandlerFunc GPacketHandler[UINT16_MAX];
 
 enum : uint16
 {
-    // �ڵ�ȭ
+    // 자동화
 	PKT_C_TEST = 1000,
 	PKT_C_MOVE = 1001,
 	PKT_S_TEST = 1002,
@@ -16,7 +16,7 @@ enum : uint16
 // Custom Handlers
 bool Handle_INVALID(PacketSessionRef& session, BYTE* buffer, int32 len);
 
-// �ڵ�ȭ
+// 자동화
 bool Handle_S_TEST(PacketSessionRef& session, Protocol::S_TEST& pkt);
 bool Handle_S_LOGIN(PacketSessionRef& session, Protocol::S_LOGIN& pkt);
 
@@ -28,7 +28,7 @@ public:
 		for (int32 i = 0; i < UINT16_MAX; i++)
 			GPacketHandler[i] = Handle_INVALID;
         
-        // �ڵ�ȭ
+        // 자동화
 		GPacketHandler[PKT_S_TEST] = [](PacketSessionRef& session, BYTE* buffer, int32 len) { return HandlePacket<Protocol::S_TEST>(Handle_S_TEST, session, buffer, len); };
 		GPacketHandler[PKT_S_LOGIN] = [](PacketSessionRef& session, BYTE* buffer, int32 len) { return HandlePacket<Protocol::S_LOGIN>(Handle_S_LOGIN, session, buffer, len); };
 	}
@@ -39,7 +39,7 @@ public:
 		return GPacketHandler[header->id](session, buffer, len);
 	}
 
-    // �ڵ�ȭ
+    // 자동화
 	static SendBufferRef MakeSendBuffer(Protocol::C_TEST& pkt) { return MakeSendBuffer(pkt, PKT_C_TEST); }
 	static SendBufferRef MakeSendBuffer(Protocol::C_MOVE& pkt) { return MakeSendBuffer(pkt, PKT_C_MOVE); }
 
