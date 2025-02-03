@@ -6,6 +6,6 @@ import "Enum.proto";
 message Player
 {
     uint64 id = 1;
-    string name = 2;
+    bytes name = 2;
     PlayerType playerType = 3;
 }

@@ -3,51 +3,52 @@
 
 class MemoryPool;
 
-/*-------------------   
-        Memory
--------------------*/
+/*-------------
+	Memory
+---------------*/
 
 class Memory
 {
-    enum
-    {
-        // ~1024ê¹Œì§€ 32ë‹¨ìœ„, ~2048ê¹Œì§€ 128ë‹¨ìœ„, ~4096ê¹Œì§€ 256ë‹¨ìœ„
-        POOL_COUNT = (1024 / 32) + (1024 / 128) + (2045 / 256),
-        MAX_ALLOC_SIZE = 4096
-    };
+	enum
+	{
+		// ~1024±îÁö 32´ÜÀ§, ~2048±îÁö 128´ÜÀ§, ~4096±îÁö 256´ÜÀ§
+		POOL_COUNT = (1024 / 32) + (1024 / 128) + (2048 / 256),
+		MAX_ALLOC_SIZE = 4096
+	};
 
 public:
-    Memory();
-    ~Memory();
+	Memory();
+	~Memory();
 
-    void*   Allocate(int32 size);
-    void    Release(void* ptr);
+	void*	Allocate(int32 size);
+	void	Release(void* ptr);
 
 private:
-    vector<MemoryPool*> _pools;
+	vector<MemoryPool*> _pools;
 
-    // ë©”ëª¨ë¦¬ í¬ê¸° <-> ë©”ëª¨ë¦¬ í’€
-    // O(1) ë¹ ë¥´ê²Œ ì°¾ê¸° ìœ„í•œ í…Œì´ë¸”
-    MemoryPool* _poolTable[MAX_ALLOC_SIZE + 1];
+	// ¸Ş¸ğ¸® Å©±â <-> ¸Ş¸ğ¸® Ç®
+	// O(1) ºü¸£°Ô Ã£±â À§ÇÑ Å×ÀÌºí
+	MemoryPool* _poolTable[MAX_ALLOC_SIZE + 1];
 };
+
 
 template<typename Type, typename... Args>
 Type* xnew(Args&&... args)
 {
-    Type* memory = static_cast<Type*>(PoolAllocator::Alloc(sizeof(Type)));
-    new(memory)Type(forward<Args>(args)...); // placement new
-    return memory;
+	Type* memory = static_cast<Type*>(PoolAllocator::Alloc(sizeof(Type)));
+	new(memory)Type(forward<Args>(args)...); // placement new
+	return memory;
 }
 
 template<typename Type>
 void xdelete(Type* obj)
 {
-    obj->~Type();
-    PoolAllocator::Release(obj);
+	obj->~Type();
+	PoolAllocator::Release(obj);
 }
 
 template<typename Type, typename... Args>
 shared_ptr<Type> MakeShared(Args&&... args)
 {
-    return shared_ptr<Type>{ xnew<Type>(forward<Args>(args)...), xdelete<Type> };
+	return shared_ptr<Type>{ xnew<Type>(forward<Args>(args)...), xdelete<Type> };
 }

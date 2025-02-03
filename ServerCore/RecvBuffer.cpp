@@ -1,14 +1,14 @@
 #include "pch.h"
 #include "RecvBuffer.h"
 
-/*----------------
-    RecvBuffer
------------------*/
+/*--------------
+	RecvBuffer
+----------------*/
 
 RecvBuffer::RecvBuffer(int32 bufferSize) : _bufferSize(bufferSize)
 {
-    _capacity = bufferSize * BUFFER_COUNT;
-    _buffer.resize(_capacity);
+	_capacity = bufferSize * BUFFER_COUNT;
+	_buffer.resize(_capacity);
 }
 
 RecvBuffer::~RecvBuffer()
@@ -17,38 +17,38 @@ RecvBuffer::~RecvBuffer()
 
 void RecvBuffer::Clean()
 {
-    int32 dataSize = DataSize();
-    if (dataSize == 0)
-    {
-        // ë”± ë§ˆì¹¨ ì½ê¸°+ì“°ê¸° ì»¤ì„œì˜ ìœ„ì¹˜ê°€ ë™ì¼í•˜ë‹¤ë©´, ë¦¬ì…‹
-        _readPos = _writePos = 0;
-    }
-    else
-    {
-        // ì—¬ìœ  ê³µê°„ì´ ë²„í¼ 1ê°œ í¬ê¸° ë¯¸ë§Œì´ë©´, ë°ì´í„°ë¥¼ ì•ìœ¼ë¡œ ë•¡ê¸´ë‹¤.
-        if (FreeSize() < _bufferSize)
-        {
-            ::memcpy(&_buffer[0], &_buffer[_readPos], dataSize);
-            _readPos = 0;
-            _writePos = dataSize;
-        }
-    }
+	int32 dataSize = DataSize();
+	if (dataSize == 0)
+	{
+		// µü ¸¶Ä§ ÀĞ±â+¾²±â Ä¿¼­°¡ µ¿ÀÏÇÑ À§Ä¡¶ó¸é, µÑ ´Ù ¸®¼Â.
+		_readPos = _writePos = 0;
+	}
+	else
+	{
+		// ¿©À¯ °ø°£ÀÌ ¹öÆÛ 1°³ Å©±â ¹Ì¸¸ÀÌ¸é, µ¥ÀÌÅÍ¸¦ ¾ÕÀ¸·Î ¶¥±ä´Ù.
+		if (FreeSize() < _bufferSize)
+		{
+			::memcpy(&_buffer[0], &_buffer[_readPos], dataSize);
+			_readPos = 0;
+			_writePos = dataSize;
+		}
+	}
 }
 
 bool RecvBuffer::OnRead(int32 numOfBytes)
 {
-    if (numOfBytes > DataSize())
-        return false;
+	if (numOfBytes > DataSize())
+		return false;
 
-    _readPos += numOfBytes;
-    return true;
+	_readPos += numOfBytes;
+	return true;
 }
 
 bool RecvBuffer::OnWrite(int32 numOfBytes)
 {
-    if (numOfBytes > FreeSize())
-        return false;
+	if (numOfBytes > FreeSize())
+		return false;
 
-    _writePos += numOfBytes;
-    return true;
+	_writePos += numOfBytes;
+	return true;
 }

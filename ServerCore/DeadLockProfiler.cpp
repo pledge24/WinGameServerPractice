@@ -1,131 +1,127 @@
 #include "pch.h"
 #include "DeadLockProfiler.h"
-#include "CoreMacro.h"
 
-/*---------------------
-    DeadLockProfiler
-----------------------*/
+
+/*--------------------
+	DeadLockProfiler
+---------------------*/
 
 void DeadLockProfiler::PushLock(const char* name)
 {
-    LockGuard guard(_lock);
+	LockGuard guard(_lock);
 
-    // ì•„ì´ë””ë¥¼ ì°¾ê±°ë‚˜ ë°œê¸‰í•œë‹¤.
-    int32 lockId = 0;
+	// ¾ÆÀÌµğ¸¦ Ã£°Å³ª ¹ß±ŞÇÑ´Ù.
+	int32 lockId = 0;
 
-    auto findIt = _nameToId.find(name);
-    if (findIt == _nameToId.end())
-    {
-        lockId = static_cast<int32>(_nameToId.size());
-        _nameToId[name] = lockId;
-        _idToName[lockId] = name;
-    }
-    else
-    {
-        lockId = findIt->second;
-    }
+	auto findIt = _nameToId.find(name);
+	if (findIt == _nameToId.end())
+	{
+		lockId = static_cast<int32>(_nameToId.size());
+		_nameToId[name] = lockId;
+		_idToName[lockId] = name;
+	}
+	else
+	{
+		lockId = findIt->second;
+	}
 
-    // ì¡ê³  ìˆëŠ” ë½ì´ ìˆì—ˆë‹¤ë©´
-    if (LLockStack.empty() == false)
-    {
-        // ê¸°ì¡´ì— ë°œê²¬ë˜ì§€ ì•Šì€ ì¼€ì´ìŠ¤ë¼ë©´ ë°ë“œë½ ì—¬ë¶€ë¥¼ ë‹¤ì‹œ í™•ì¸í•œë‹¤.
-        const int32 prevId = LLockStack.top();
-        if (lockId != prevId)
-        {
-            set<int32>& history = _lockHistory[prevId];
-            if (history.find(lockId) == history.end())
-            {
-                history.insert(lockId);
-                CheckCycle();
-            }
-        }
-    }
+	// Àâ°í ÀÖ´Â ¶ôÀÌ ÀÖ¾ú´Ù¸é
+	if (LLockStack.empty() == false)
+	{
+		// ±âÁ¸¿¡ ¹ß°ßµÇÁö ¾ÊÀº ÄÉÀÌ½º¶ó¸é µ¥µå¶ô ¿©ºÎ ´Ù½Ã È®ÀÎÇÑ´Ù.
+		const int32 prevId = LLockStack.top();
+		if (lockId != prevId)
+		{
+			set<int32>& history = _lockHistory[prevId];
+			if (history.find(lockId) == history.end())
+			{
+				history.insert(lockId);
+				CheckCycle();
+			}
+		}
+	}
 
-    LLockStack.push(lockId);
+	LLockStack.push(lockId);
 }
 
 void DeadLockProfiler::PopLock(const char* name)
 {
-    LockGuard guard(_lock);
+	LockGuard guard(_lock);
 
-    // --------- ì•ˆì •í™”ë˜ë©´ ì—†ì–´ë„ ë˜ëŠ” ì½”ë“œ ---------
-    if (LLockStack.empty())
-        CRASH("MULTIPLE_UNLOCK");
+	if (LLockStack.empty())
+		CRASH("MULTIPLE_UNLOCK");
 
-    int32 lockId = _nameToId[name];
-    if (LLockStack.top() != lockId)
-        CRASH("INVALID_UNLOCK");
+	int32 lockId = _nameToId[name];
+	if (LLockStack.top() != lockId)
+		CRASH("INVALID_UNLOCK");
 
-    // ------------------------------------------------
-
-    LLockStack.pop();
+	LLockStack.pop();
 }
 
 void DeadLockProfiler::CheckCycle()
 {
-    const int32 lockCount = static_cast<int32>(_nameToId.size());
-    _discoveredOrder = vector<int32>(lockCount, -1);
-    _discoveredCount = 0;
-    _finished = vector<bool>(lockCount, false);
-    _parent = vector<int32>(lockCount, -1);
+	const int32 lockCount = static_cast<int32>(_nameToId.size());
+	_discoveredOrder = vector<int32>(lockCount, -1);
+	_discoveredCount = 0;
+	_finished = vector<bool>(lockCount, false);
+	_parent = vector<int32>(lockCount, -1);
 
-    for (int32 lockId = 0; lockId < lockCount; lockId++)
-        Dfs(lockId);
+	for (int32 lockId = 0; lockId < lockCount; lockId++)
+		Dfs(lockId);
 
-    // ì—°ì‚°ì´ ëë‚¬ìœ¼ë©´ ì •ë¦¬í•œë‹¤.
-    _discoveredOrder.clear();
-    _finished.clear();
-    _parent.clear();
+	// ¿¬»êÀÌ ³¡³µÀ¸¸é Á¤¸®ÇÑ´Ù.
+	_discoveredOrder.clear();
+	_finished.clear();
+	_parent.clear();
 }
 
 void DeadLockProfiler::Dfs(int32 here)
 {
-    if (_discoveredOrder[here] != -1)
-        return;
+	if (_discoveredOrder[here] != -1)
+		return;
 
-    _discoveredOrder[here] = _discoveredCount++;
+	_discoveredOrder[here] = _discoveredCount++;
 
-    // ëª¨ë“  ì¸ì ‘í•œ ì •ì ì„ ìˆœíšŒí•œë‹¤.
-    auto findIt = _lockHistory.find(here);
-    if (findIt == _lockHistory.end())
-    {
-        _finished[here] = true;
-        return;
-    }
+	// ¸ğµç ÀÎÁ¢ÇÑ Á¤Á¡À» ¼øÈ¸ÇÑ´Ù.
+	auto findIt = _lockHistory.find(here);
+	if (findIt == _lockHistory.end())
+	{
+		_finished[here] = true;
+		return;
+	}
 
-    set<int32>& nextSet = findIt->second;
-    for (int32 there : nextSet)
-    {
-        // ì•„ì§ ë°©ë¬¸í•œ ì ì´ ì—†ë‹¤ë©´ ë°©ë¬¸í•œë‹¤.
-        if (_discoveredOrder[there] == -1)
-        {
-            _parent[there] = here;
-            Dfs(there);
-            continue;
-        }
+	set<int32>& nextSet = findIt->second;
+	for (int32 there : nextSet)
+	{
+		// ¾ÆÁ÷ ¹æ¹®ÇÑ ÀûÀÌ ¾ø´Ù¸é ¹æ¹®ÇÑ´Ù.
+		if (_discoveredOrder[there] == -1)
+		{
+			_parent[there] = here;
+			Dfs(there);
+			continue;
+		}
 
-        // hereê°€ thereë³´ë‹¤ ë¨¼ì € ë°œê²¬ë˜ì—ˆë‹¤ë©´, thereëŠ” hereì˜ í›„ì†ì´ë‹¤. (ìˆœë°©í–¥ ê°„ì„ )
-        if (_discoveredOrder[here] < _discoveredOrder[here])
-            continue;
+		// here°¡ thereº¸´Ù ¸ÕÀú ¹ß°ßµÇ¾ú´Ù¸é, there´Â hereÀÇ ÈÄ¼ÕÀÌ´Ù. (¼ø¹æÇâ °£¼±)
+		if (_discoveredOrder[here] < _discoveredOrder[there])
+			continue;
 
-        // ìˆœë°©í–¥ì´ ì•„ë‹ˆê³ , Dfs(there)ê°€ ì•„ì§ ì¢…ë£Œí•˜ì§€ ì•Šì•˜ë‹¤ë©´, thereëŠ” hereì˜ ì„ ì¡°ì´ë‹¤. (ì—­ë°©í–¥ ê°„ì„ )
-        if (_finished[there] == false)
-        {
-            printf("%s -> %s\n", _idToName[here], _idToName[there]);
+		// ¼ø¹æÇâÀÌ ¾Æ´Ï°í, Dfs(there)°¡ ¾ÆÁ÷ Á¾·áÇÏÁö ¾Ê¾Ò´Ù¸é, there´Â hereÀÇ ¼±Á¶ÀÌ´Ù. (¿ª¹æÇâ °£¼±)
+		if (_finished[there] == false)
+		{
+			printf("%s -> %s\n", _idToName[here], _idToName[there]);
 
-            int32 now = here;
-            while (true)
-            {
-                printf("%s -> %s\n", _idToName[_parent[now]], _idToName[now]);
-                now = _parent[now];
-                if (now == there)
-                    break;
-            }
+			int32 now = here;
+			while (true)
+			{
+				printf("%s -> %s\n", _idToName[_parent[now]], _idToName[now]);
+				now = _parent[now];
+				if (now == there)
+					break;
+			}
 
-            CRASH("DEADLOCK_DETECTED")
-        }
-    }
+			CRASH("DEADLOCK_DETECTED");
+		}
+	}
 
-    _finished[here] = true;
-
+	_finished[here] = true;
 }

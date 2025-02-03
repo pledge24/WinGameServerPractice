@@ -180,7 +180,7 @@ class Player final :
     kIdFieldNumber = 1,
     kPlayerTypeFieldNumber = 3,
   };
-  // string name = 2;
+  // bytes name = 2;
   void clear_name();
   const std::string& name() const;
   template <typename ArgT0 = const std::string&, typename... ArgT>
@@ -256,7 +256,7 @@ inline void Player::set_id(uint64_t value) {
   // @@protoc_insertion_point(field_set:Protocol.Player.id)
 }
 
-// string name = 2;
+// bytes name = 2;
 inline void Player::clear_name() {
   name_.ClearToEmpty();
 }
@@ -268,7 +268,7 @@ template <typename ArgT0, typename... ArgT>
 inline PROTOBUF_ALWAYS_INLINE
 void Player::set_name(ArgT0&& arg0, ArgT... args) {
  
- name_.Set(static_cast<ArgT0 &&>(arg0), args..., GetArenaForAllocation());
+ name_.SetBytes(static_cast<ArgT0 &&>(arg0), args..., GetArenaForAllocation());
   // @@protoc_insertion_point(field_set:Protocol.Player.name)
 }
 inline std::string* Player::mutable_name() {

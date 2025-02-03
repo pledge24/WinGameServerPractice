@@ -6,7 +6,6 @@ extern PacketHandlerFunc GPacketHandler[UINT16_MAX];
 
 enum : uint16
 {
-    // 자동화
 {%- for pkt in parser.total_pkt %}
 	PKT_{{pkt.name}} = {{pkt.id}},
 {%- endfor %}
@@ -15,7 +14,6 @@ enum : uint16
 // Custom Handlers
 bool Handle_INVALID(PacketSessionRef& session, BYTE* buffer, int32 len);
 
-// 자동화
 {%- for pkt in parser.recv_pkt %}
 bool Handle_{{pkt.name}}(PacketSessionRef& session, Protocol::{{pkt.name}}& pkt);
 {%- endfor %}
@@ -27,8 +25,7 @@ public:
 	{
 		for (int32 i = 0; i < UINT16_MAX; i++)
 			GPacketHandler[i] = Handle_INVALID;
-        
-        // 자동화
+
 {%- for pkt in parser.recv_pkt %}
 		GPacketHandler[PKT_{{pkt.name}}] = [](PacketSessionRef& session, BYTE* buffer, int32 len) { return HandlePacket<Protocol::{{pkt.name}}>(Handle_{{pkt.name}}, session, buffer, len); };
 {%- endfor %}
@@ -40,7 +37,6 @@ public:
 		return GPacketHandler[header->id](session, buffer, len);
 	}
 
-    // 자동화
 {%- for pkt in parser.send_pkt %}
 	static SendBufferRef MakeSendBuffer(Protocol::{{pkt.name}}& pkt) { return MakeSendBuffer(pkt, PKT_{{pkt.name}}); }
 {%- endfor %}

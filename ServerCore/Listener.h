@@ -5,34 +5,34 @@
 class AcceptEvent;
 class ServerService;
 
-/*---------------
-     Listener
------------------*/
+/*--------------
+	Listener
+---------------*/
 
 class Listener : public IocpObject
 {
 public:
-    Listener() = default;
-    ~Listener();
+	Listener() = default;
+	~Listener();
 
 public:
-    /*ì™¸ë¶€ì—ì„œ ì‚¬ìš©*/
-    bool StartAccept(ServerServiceRef service);
-    void CloseSocket();
+	/* ¿ÜºÎ¿¡¼­ »ç¿ë */
+	bool StartAccept(ServerServiceRef service);
+	void CloseSocket();
 
 public:
-    /*ì¸í„°í˜ì´ìŠ¤ êµ¬í˜„*/
-    virtual HANDLE GetHandle() override;
-    virtual void Dispatch(class IocpEvent* iocpEvent, int32 numOfBytes = 0) override;
+	/* ÀÎÅÍÆäÀÌ½º ±¸Çö */
+	virtual HANDLE GetHandle() override;
+	virtual void Dispatch(class IocpEvent* iocpEvent, int32 numOfBytes = 0) override;
 
 private:
-    /*ìˆ˜ì‹  ê´€ë ¨*/
-    void RegisterAccept(AcceptEvent* acceptEvent);
-    void ProcessAccept(AcceptEvent* acceptEvent);
+	/* ¼ö½Å °ü·Ã */
+	void RegisterAccept(AcceptEvent* acceptEvent);
+	void ProcessAccept(AcceptEvent* acceptEvent);
 
 protected:
-    SOCKET _socket = INVALID_SOCKET;
-    Vector<AcceptEvent*> _acceptEvents;
-    ServerServiceRef _service;
+	SOCKET _socket = INVALID_SOCKET;
+	Vector<AcceptEvent*> _acceptEvents;
+	ServerServiceRef _service;
 };
 
