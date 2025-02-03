@@ -62,7 +62,7 @@ static const ::_pb::Message* const file_default_instances[] = {
 
 const char descriptor_table_protodef_Struct_2eproto[] PROTOBUF_SECTION_VARIABLE(protodesc_cold) =
   "\n\014Struct.proto\022\010Protocol\032\nEnum.proto\"L\n\006"
-  "Player\022\n\n\002id\030\001 \001(\004\022\014\n\004name\030\002 \001(\014\022(\n\nplay"
+  "Player\022\n\n\002id\030\001 \001(\004\022\014\n\004name\030\002 \001(\t\022(\n\nplay"
   "erType\030\003 \001(\0162\024.Protocol.PlayerTypeb\006prot"
   "o3"
   ;
@@ -171,12 +171,13 @@ const char* Player::_InternalParse(const char* ptr, ::_pbi::ParseContext* ctx) {
         } else
           goto handle_unusual;
         continue;
-      // bytes name = 2;
+      // string name = 2;
       case 2:
         if (PROTOBUF_PREDICT_TRUE(static_cast<uint8_t>(tag) == 18)) {
           auto str = _internal_mutable_name();
           ptr = ::_pbi::InlineGreedyStringParser(str, ptr, ctx);
           CHK_(ptr);
+          CHK_(::_pbi::VerifyUTF8(str, "Protocol.Player.name"));
         } else
           goto handle_unusual;
         continue;
@@ -224,9 +225,13 @@ uint8_t* Player::_InternalSerialize(
     target = ::_pbi::WireFormatLite::WriteUInt64ToArray(1, this->_internal_id(), target);
   }
 
-  // bytes name = 2;
+  // string name = 2;
   if (!this->_internal_name().empty()) {
-    target = stream->WriteBytesMaybeAliased(
+    ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::VerifyUtf8String(
+      this->_internal_name().data(), static_cast<int>(this->_internal_name().length()),
+      ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::SERIALIZE,
+      "Protocol.Player.name");
+    target = stream->WriteStringMaybeAliased(
         2, this->_internal_name(), target);
   }
 
@@ -253,10 +258,10 @@ size_t Player::ByteSizeLong() const {
   // Prevent compiler warnings about cached_has_bits being unused
   (void) cached_has_bits;
 
-  // bytes name = 2;
+  // string name = 2;
   if (!this->_internal_name().empty()) {
     total_size += 1 +
-      ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::BytesSize(
+      ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::StringSize(
         this->_internal_name());
   }
 

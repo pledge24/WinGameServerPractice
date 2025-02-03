@@ -765,7 +765,7 @@ class C_CHAT final :
   enum : int {
     kMsgFieldNumber = 1,
   };
-  // bytes msg = 1;
+  // string msg = 1;
   void clear_msg();
   const std::string& msg() const;
   template <typename ArgT0 = const std::string&, typename... ArgT>
@@ -914,7 +914,7 @@ class S_CHAT final :
     kMsgFieldNumber = 2,
     kPlayerIdFieldNumber = 1,
   };
-  // bytes msg = 2;
+  // string msg = 2;
   void clear_msg();
   const std::string& msg() const;
   template <typename ArgT0 = const std::string&, typename... ArgT>
@@ -1073,7 +1073,7 @@ inline void S_ENTER_GAME::set_success(bool value) {
 
 // C_CHAT
 
-// bytes msg = 1;
+// string msg = 1;
 inline void C_CHAT::clear_msg() {
   msg_.ClearToEmpty();
 }
@@ -1085,7 +1085,7 @@ template <typename ArgT0, typename... ArgT>
 inline PROTOBUF_ALWAYS_INLINE
 void C_CHAT::set_msg(ArgT0&& arg0, ArgT... args) {
  
- msg_.SetBytes(static_cast<ArgT0 &&>(arg0), args..., GetArenaForAllocation());
+ msg_.Set(static_cast<ArgT0 &&>(arg0), args..., GetArenaForAllocation());
   // @@protoc_insertion_point(field_set:Protocol.C_CHAT.msg)
 }
 inline std::string* C_CHAT::mutable_msg() {
@@ -1147,7 +1147,7 @@ inline void S_CHAT::set_playerid(uint64_t value) {
   // @@protoc_insertion_point(field_set:Protocol.S_CHAT.playerId)
 }
 
-// bytes msg = 2;
+// string msg = 2;
 inline void S_CHAT::clear_msg() {
   msg_.ClearToEmpty();
 }
@@ -1159,7 +1159,7 @@ template <typename ArgT0, typename... ArgT>
 inline PROTOBUF_ALWAYS_INLINE
 void S_CHAT::set_msg(ArgT0&& arg0, ArgT... args) {
  
- msg_.SetBytes(static_cast<ArgT0 &&>(arg0), args..., GetArenaForAllocation());
+ msg_.Set(static_cast<ArgT0 &&>(arg0), args..., GetArenaForAllocation());
   // @@protoc_insertion_point(field_set:Protocol.S_CHAT.msg)
 }
 inline std::string* S_CHAT::mutable_msg() {
