@@ -10,29 +10,10 @@
 #include "Protocol.pb.h"
 #include "Job.h"
 #include "Room.h"
-
-void HealByValue(int64 target, int32 value)
-{
-    cout << target << " " << value << endl;
-}
-
-class Knight
-{
-public:
-    void HealMe(int32 value)
-    {
-        cout << "HealMe! " << value << endl;
-    }
-};
+#include "Player.h"
 
 int main()
 {
-    // TEST JOB
-    {
-        FuncJob<void, int64, int32> job(HealByValue, 100, 10);
-
-        job.Execute();
-    }
 
 	ClientPacketHandler::Init();
 
@@ -57,7 +38,7 @@ int main()
 
     while (true)
     {
-        GRoom.FlushJob();
+        GRoom->FlushJob();
         this_thread::sleep_for(1ms);
     }
 
