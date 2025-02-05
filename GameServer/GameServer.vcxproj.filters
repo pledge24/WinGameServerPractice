@@ -88,5 +88,6 @@
     <None Include="..\Common\Protobuf\bin\GenPackets.bat">
       <Filter>Protocol</Filter>
     </None>
+    <None Include="..\.editorconfig" />
   </ItemGroup>
 </Project>

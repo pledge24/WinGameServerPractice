@@ -222,6 +222,7 @@
     <ClInclude Include="Struct.pb.h" />
   </ItemGroup>
   <ItemGroup>
+    <None Include="..\.editorconfig" />
     <None Include="..\Common\Protobuf\bin\Enum.proto" />
     <None Include="..\Common\Protobuf\bin\GenPackets.bat" />
     <None Include="..\Common\Protobuf\bin\Protocol.proto" />
