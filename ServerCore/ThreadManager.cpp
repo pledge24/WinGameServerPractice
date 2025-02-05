@@ -3,7 +3,6 @@
 #include "CoreTLS.h"
 #include "CoreGlobal.h"
 #include "GlobalQueue.h"
-#include "JobQueue.h"
 
 /*------------------
 	ThreadManager
@@ -55,23 +54,23 @@ void ThreadManager::DestroyTLS()
 
 void ThreadManager::DoGlobalQueueWork()
 {
-    while (true)
-    {
-        uint64 now = ::GetTickCount64();
-        if (now > LEndTickCount)
-            break;
+	while (true)
+	{
+		uint64 now = ::GetTickCount64();
+		if (now > LEndTickCount)
+			break;
 
-        JobQueueRef jobQueue = GGlobalQueue->Pop();
-        if (jobQueue == nullptr)
-            break;
+		JobQueueRef jobQueue = GGlobalQueue->Pop();
+		if (jobQueue == nullptr)
+			break;
 
-        jobQueue->Execute();
-    }
+		jobQueue->Execute();
+	}
 }
 
 void ThreadManager::DistributeReservedJobs()
 {
-    const uint64 now = ::GetTickCount64();
+	const uint64 now = ::GetTickCount64();
 
-    GJobTimer->Distribute(now);
+	GJobTimer->Distribute(now);
 }

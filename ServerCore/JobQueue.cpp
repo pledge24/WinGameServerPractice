@@ -2,60 +2,59 @@
 #include "JobQueue.h"
 #include "GlobalQueue.h"
 
-/*----------------
-      JobQueue
-------------------*/
+/*--------------
+	JobQueue
+---------------*/
 
 void JobQueue::Push(JobRef job, bool pushOnly)
 {
-    const int32 prevCount = _jobCount.fetch_add(1);
-    _jobs.Push(job); // WRITE_LOCK
+	const int32 prevCount = _jobCount.fetch_add(1);
+	_jobs.Push(job); // WRITE_LOCK
 
-    // ì²«ë²ˆì§¸ Jobì„ ë„£ì€ ì“°ë ˆë“œê°€ ì‹¤í–‰ê¹Œì§€ ë‹´ë‹¹
-    if (prevCount == 0)
-    {
-        // ì´ë¯¸ ì‹¤í–‰ì¤‘ì¸ JobQueueê°€ ì—†ìœ¼ë©´ ì‹¤í–‰
-        if (LCurrentJobQueue == nullptr && pushOnly == false)
-        {
-            Execute();
-        }
-        else
-        {
-            // ì—¬ìœ  ìˆëŠ” ë‹¤ë¥¸ ì“°ë ˆë“œê°€ ì‹¤í–‰í•˜ë„ë¡ GlobalQueueì— ë„˜ê¸´ë‹¤.
-            GGlobalQueue->Push(shared_from_this());
-        }
-    }
+	// Ã¹¹øÂ° JobÀ» ³ÖÀº ¾²·¹µå°¡ ½ÇÇà±îÁö ´ã´ç
+	if (prevCount == 0)
+	{
+		// ÀÌ¹Ì ½ÇÇàÁßÀÎ JobQueue°¡ ¾øÀ¸¸é ½ÇÇà
+		if (LCurrentJobQueue == nullptr && pushOnly == false)
+		{
+			Execute();
+		}
+		else
+		{
+			// ¿©À¯ ÀÖ´Â ´Ù¸¥ ¾²·¹µå°¡ ½ÇÇàÇÏµµ·Ï GlobalQueue¿¡ ³Ñ±ä´Ù
+			GGlobalQueue->Push(shared_from_this());
+		}
+	}
 }
 
-// 1) ì¼ê°ì´ ë„ˆ~ë¬´ ëª°ë¦¬ë©´?
-// 2) DoAsync íƒ€ê³  íƒ€ê³  ê°€ì„œ~ ì ˆëŒ€ ëë‚˜ì§€ ì•ŠëŠ” ìƒí™©(ì¼ê°ì´ í•œ ì“°ë ˆë“œí•œí…Œ ëª°ë¦¼)
+// 1) ÀÏ°¨ÀÌ ³Ê~¹« ¸ô¸®¸é?
 void JobQueue::Execute()
 {
-    LCurrentJobQueue = this;
+	LCurrentJobQueue = this;
 
-    while (true)
-    {
-        Vector<JobRef> jobs;
-        _jobs.PopAll(OUT jobs);
+	while (true)
+	{
+		Vector<JobRef> jobs;
+		_jobs.PopAll(OUT jobs);
 
-        const int32 jobCount = static_cast<int32>(jobs.size());
-        for (int32 i = 0; i < jobCount; i++)
-            jobs[i]->Execute();
+		const int32 jobCount = static_cast<int32>(jobs.size());
+		for (int32 i = 0; i < jobCount; i++)
+			jobs[i]->Execute();
 
-        // ë‚¨ì€ ì¼ê°ì´ 0ê°œë¼ë©´ ì¢…ë£Œ
-        if (_jobCount.fetch_sub(jobCount) == jobCount)
-        {
-            LCurrentJobQueue = nullptr;
-            return;
-        }
+		// ³²Àº ÀÏ°¨ÀÌ 0°³¶ó¸é Á¾·á
+		if (_jobCount.fetch_sub(jobCount) == jobCount)
+		{
+			LCurrentJobQueue = nullptr;
+			return;
+		}
 
-        const uint64 now = ::GetTickCount64();
-        if (now >= LEndTickCount)
-        {
-            LCurrentJobQueue = nullptr;
-            // ì—¬ìœ  ìˆëŠ” ë‹¤ë¥¸ ì“°ë ˆë“œê°€ ì‹¤í–‰í•˜ë„ë¡ GlobalQueueì— ë„˜ê¸´ë‹¤.
-            GGlobalQueue->Push(shared_from_this());
-            break;
-        }
-    }
+		const uint64 now = ::GetTickCount64();
+		if (now >= LEndTickCount)
+		{
+			LCurrentJobQueue = nullptr;
+			// ¿©À¯ ÀÖ´Â ´Ù¸¥ ¾²·¹µå°¡ ½ÇÇàÇÏµµ·Ï GlobalQueue¿¡ ³Ñ±ä´Ù
+			GGlobalQueue->Push(shared_from_this());
+			break;
+		}			
+	}
 }
