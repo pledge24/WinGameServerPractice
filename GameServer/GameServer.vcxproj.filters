@@ -13,6 +13,9 @@
     <Filter Include="GameContents">
       <UniqueIdentifier>{87ecb0c8-a463-4f2f-8da3-49a7bcdfb77a}</UniqueIdentifier>
     </Filter>
+    <Filter Include="DB">
+      <UniqueIdentifier>{708872cd-35a6-4d72-a723-668221436aa7}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="GameServer.cpp">
@@ -89,5 +92,10 @@
       <Filter>Protocol</Filter>
     </None>
     <None Include="..\.editorconfig" />
+  </ItemGroup>
+  <ItemGroup>
+    <Xml Include="GameDB.xml">
+      <Filter>DB</Filter>
+    </Xml>
   </ItemGroup>
 </Project>
